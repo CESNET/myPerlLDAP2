@@ -20,18 +20,6 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # #############################################################################
 
-# #############################################################################
-# This module contains some code pieces from Mozilla::OpenLDAP::Entry
-# (extracted from Mozilla-OpenLDAP-API-1.4), please look at coments before
-# definition of each function for info about it's origin. The original code
-# was introduced by this:
-#    The Original Code is PerLDAP. The Initial Developer of the Original
-#    Code is Netscape Communications Corp. and Clayton Donley. Portions
-#    created by Netscape are Copyright (C) Netscape Communications Corp.,
-#    portions created by Clayton Donley are Copyright (C) Clayton Donley.
-#    All Rights Reserved.
-# #############################################################################
-
 package myPerlLDAP::entry;
 
 use strict;
@@ -43,7 +31,7 @@ use myPerlLDAP::abstract;
 use myPerlLDAP::attribute;
 use myPerlLDAP::utils qw(quote4XML quote4HTTP);
 
-use vars qw($_D $AUTOLOAD @ISA);
+use vars qw($AUTOLOAD @ISA %fields);
 
 @ISA = ("myPerlLDAP::abstract");
 
@@ -55,28 +43,27 @@ use vars qw($_D $AUTOLOAD @ISA);
 # Debug levels:
 #  1 ... warnings about nasty class usage
 # 10 ... excution of some methods
-$_D = 1;
 
-my %fields = (
-	      dn          => undef,
-	      debug       => $_D,
-	      owner       => undef,
-	      attrData    => {},
-	      attrOrder   => [],
-	      attrChanges => [],
-	      attrInit    => {},
-	      attrMap     => {},
-	     );
+%fields = (
+	   dn          => undef,
+	   debug       => 1,
+	   owner       => undef,
+	   attrData    => {},
+	   attrOrder   => [],
+	   attrChanges => [],
+	   attrInit    => {},
+	   attrMap     => {},
+	  );
 
 sub new {
   my $proto = shift;
   my $class = ref($proto) || $proto;
 
-  if ($_D >= 10) {
+  my $self = bless $class->SUPER::new(@_), $class;
+
+  if ($self->debug >= 10) {
     carp("$class created");
   };
-
-  my $self = bless $class->SUPER::new(@_), $class;
 
   foreach my $element (keys %fields) {
     $self->{_permitted_fields}->{$element} = $fields{$element};
@@ -105,7 +92,7 @@ sub init {
   $self->attrData({});
   $self->clearModifiedFlags;
 
-  if (($_D >= 10) || ($self->debug >= 10)) {
+  if ($self->debug >= 10) {
     carp("$self initiated");
   };
 };
@@ -113,7 +100,7 @@ sub init {
 sub DESTROY {
   my $self = shift;
 
-  if (($_D >= 10) || ($self->debug >= 10)) {
+  if ($self->debug >= 10) {
     carp("$self destroyed");
   };
 };
@@ -331,7 +318,7 @@ sub XMLString {
 #
 # Input: #1 name of required attribute to add to
 #        #2 value or arrayref of values
-#        #3 option sub-type attribute
+#        #3 optional sub-type attribute
 #
 # Output: count of added values (retrieved from attribute->add method)
 #
@@ -349,7 +336,6 @@ sub addValues {
   my $attrName = lc shift;
   my $values = shift;
   my $subType = shift;
-
   my $attr = $self->attr($attrName);
   my $attrIsNew = 0;
 
@@ -386,7 +372,7 @@ sub addValues {
 
   $values = [$values] if (ref($values) ne 'ARRAY');
 
-  $res = $attr->add($values, $subType);
+  $res = $attr->addValues($values, $subType);
   $self->error($attr->error);
 
   if ($attrIsNew and $RO) {
@@ -401,6 +387,60 @@ sub addValues {
 
   return $res;
 }; # addValues ----------------------------------------------------------------
+
+# #############################################################################
+# Set values to entry's attribute, if necessary create attribute too. For more
+# info see addValues.
+
+sub setValues {
+  my $self = shift;
+  my $attrName = lc shift;
+
+  my $attr = $self->attr($attrName);
+  if (!defined($attr)) {
+    return $self->addValues($attrName, @_);
+  } else {
+    $attr->clearValues;
+    return $self->addValues($attrName, @_);
+  };
+}; # setValues ----------------------------------------------------------------
+
+# #############################################################################
+# Remove values from entry's attribute, if attribute isn't present return
+# LDAP_NO_SUCH_ATTRIBUTE.
+
+sub removeValues {
+  my $self = shift;
+  my $attrName = lc shift;
+
+  my $attr = $self->attr($attrName);
+
+  if (!defined($attr)) {
+    $self->error(LDAP_NO_SUCH_ATTRIBUTE);
+    return 0;
+  };
+
+  return $attr->remove(@_);
+}; # removeValues -------------------------------------------------------------
+
+# #############################################################################
+# Get values of the entry's attribute, if attribute isn't present set error
+# LDAP_NO_SUCH_ATTRIBUTE and return empty arrayref
+
+sub getValues {
+  my $self = shift;
+  my $attrName = lc shift;
+
+  my $attr = $self->attr($attrName);
+
+  if (!defined($attr)) {
+    $self->error(LDAP_NO_SUCH_ATTRIBUTE);
+    return [];
+  };
+
+  return $attr->getValues(@_);
+}; # getValues ----------------------------------------------------------------
+
 
 sub makeAddRecord {
   my $self = shift;

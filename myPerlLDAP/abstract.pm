@@ -27,16 +27,16 @@ package myPerlLDAP::abstract;
 
 use strict;
 use Carp;
-use vars qw($_D $AUTOLOAD);
+use vars qw($_D $AUTOLOAD %fields);
 use perlOpenLDAP::API 1.4 qw(ldap_err2string
 			     LDAP_SUCCESS);
 
 $_D = 1;
 
-my %fields = (
-	      debug       => $_D,
-	      error       => LDAP_SUCCESS,
-	     );
+%fields = (
+	   debug       => $_D,
+	   error       => LDAP_SUCCESS,
+	  );
 
 sub new {
   my $proto = shift;

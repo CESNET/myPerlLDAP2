@@ -56,11 +56,11 @@ print "ok 3\n" if $SOK;
 # - 4 -----------------------------------------------------------------------
 $SOK = 1;
 my $entry = $res->nextEntry or $SOK = 0;
-$entry->addAsValues('description', 'Popiska');
-$entry->remove('givenName');
-$entry->remove('mail');
-$entry->addAsValues('givenName', 'Trotl');
-$entry->attr('cn')->add('BFU');
+$entry->addValues('description', 'Popiska');
+$entry->removeAttr('givenName');
+$entry->removeAttr('mail');
+$entry->addValues('givenName', 'Trotl');
+$entry->addValues('cn', 'BFU');
 
 $conn->update($entry) or $SOK = 0;
 print "not ok 4\n" unless $SOK;
