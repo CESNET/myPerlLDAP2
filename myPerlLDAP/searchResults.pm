@@ -2,7 +2,7 @@
 
 package myPerlLDAP::SearchResults;
 
-use Mozilla::OpenLDAP::API 1.4 qw(ldap_first_entry ldap_next_entry ldap_msgfree ldap_get_dn ldap_first_attribute ldap_next_attribute ldap_get_values_len ldap_ber_free);
+use Mozilla::OpenLDAP::API 1.4 qw(ldap_first_entry ldap_next_entry ldap_msgfree ldap_get_dn ldap_first_attribute ldap_next_attribute ldap_get_values_len ldap_ber_free ldap_count_entries);
 use strict;
 use Carp;
 
@@ -121,3 +121,9 @@ sub nextEntry {
   return $entry;
 };
 
+# Return count of returned entries
+sub count {
+  my $self = shift;
+
+  return ldap_count_entries($self->{"ld"}, $self->{"ldres"});
+};
