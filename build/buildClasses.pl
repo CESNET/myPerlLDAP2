@@ -1,14 +1,19 @@
 #!/usr/bin/perl -w
 
-use lib qw(. ..);
+use lib qw(..);
 
 use strict;
 use myPerlLDAP::Conn;
-#use Mozilla::OpenLDAP::Conn;
-use Mozilla::OpenLDAP::API qw(LDAP_PORT LDAPS_PORT LDAP_SCOPE_BASE);
+use myPerlLDAP::Attribute;
+use Mozilla::OpenLDAP::API qw(LDAP_PORT LDAP_SCOPE_BASE);
 
 use vars qw($VERSION);
-$VERSION = "0.2.0";
+$VERSION = "0.2.2";
+
+$myPerlLDAP::Attribute::_D=0;
+
+my $LDAPServerHost;
+my $LDAPServerPort = LDAP_PORT;
 
 my $match_OID       = qw /^(\S+)\s+NAME/;
 my $match_NAME      = qw /NAME\s+\'([\w\-]+)\'/;
@@ -307,13 +312,16 @@ sub compareAttributeHash {
   return 1;
 };
 
-#my $LDAPServerHost = "tady.ten.cz";
-#my $LDAPServerHost = "nms.ctt.cz";
-my $LDAPServerHost = "localhost";
-my $LDAPServerPort = LDAP_PORT;
+if ((@ARGV>2) or ((@ARGV)<1)) {
+  print STDERR "Usage: buildClasses.pl SERVER_HOSTNAME [SERVER_PORT]\n";
+  exit (0);
+};
+
+$LDAPServerHost = $ARGV[0];
+$LDAPServerPort = $ARGV[1] if (@ARGV==2);
+
 my $conn = new myPerlLDAP::Conn({"host"   => $LDAPServerHost,
-				 "port"   => $LDAPServerPort,
-				 "certdb" => 1} )
+				 "port"   => $LDAPServerPort})
   or die "Can't connect to the LDAP server ($LDAPServerHost:$LDAPServerPort)";
 
 # Findout where schema is stored
