@@ -197,12 +197,22 @@ sub addAsValues {
     return undef;
   };
 
+  # Create and add new attribute
   my $new_attr = new myPerlLDAP::Attribute($attr);
+                                  # TODO: Findout an OOP correct way
+  my $RO = $new_attr->{READONLY}; # This is dirty, but simplest way how to
+  $new_attr->{READONLY}=0 if $RO; # temporarly disable RO checks ... it is
+                                  # required for initial values setting
   if ($new_attr) {
     if ($new_attr->set(@_)) {
+      $new_attr->{READONLY}=1 if $RO;
       return $self->add($new_attr);
     };
   };
+
+  $new_attr->{READONLY}=1 if $RO;
+
+  return;
 };
 
 sub makeAddRecord {
