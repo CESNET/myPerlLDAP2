@@ -481,9 +481,11 @@ sub makeModificationRecord {
     my $values = shift;
 
     if ((scalar @{$values} == 1) and ($values->[0] eq '')) {
+      return 0;
     } else {
       $res->{$attr}->{$mode} = [] if (!defined($res->{$attr}->{$mode}));
       push @{$res->{$attr}->{$mode}}, @{$values};
+      return 1;
     };
   };
 
@@ -500,15 +502,18 @@ sub makeModificationRecord {
       addValues2res(\%res, $attr, 'ab', $self->getValues($type));
     };
   } elsif (defined($self->{_cleared})) {
-    #warn "$self->makeModificationRecord: Replace mode of _cleared";
+    warn "$self->makeModificationRecord: Replace mode of _cleared";
     my $counter=0;
+    my $addedSomething = 0;
     foreach my $val (@{$self->{VALUES}}) {
       my $attr = $self->name;
       $attr = "$attr;$val->[1]" if ($val->[1]);
-      addValues2res(\%res, $attr, 'rb', [$val->[0]]);
+      $addedSomething = 1 if addValues2res(\%res, $attr, 'rb', [$val->[0]]);
       $counter++;
     };
-    addValues2res(\%res, $self->name, 'rb', []) if ($counter==0);
+    addValues2res(\%res, $self->name, 'rb', []) if (($counter == 0) or
+						    ($addedSomething == 0));
+    warn Dumper(\%res);
   } elsif ($mode eq 'rb-force') {
     foreach my $type (@{$self->types}) {
       my $attr = $self->name;
@@ -548,7 +553,7 @@ sub makeModificationRecord {
 	addValues2res(\%res, $attr, 'ab', [$_val->[0]]);
       };
     };
-#    warn Dumper("----------------------------------------------------------",
+    #warn Dumper("----------------------------------------------------------",
 #		"NAME",     $self->name,
 #		"MODIFIED", $self->modified,
 #		"CLEARED",  $self->{_cleared},
