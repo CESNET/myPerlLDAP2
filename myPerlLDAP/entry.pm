@@ -7,7 +7,7 @@ use Carp;
 
 use myPerlLDAP::Attribute;
 
-use vars qw($VERSION);
+use vars qw($VERSION $_D);
 
 $VERSION = "0.0.1";
 
@@ -20,7 +20,7 @@ $VERSION = "0.0.1";
 # Debug levels:
 #  1 ... warnings about nasty class usage (trying set value of read-only attr ...)
 # 10 ... excution of some methods
-my $_D = 1;
+$_D = 1;
 
 sub new {
   my $proto = shift;

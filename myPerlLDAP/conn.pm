@@ -8,9 +8,10 @@ use Mozilla::OpenLDAP::Utils qw(str2Scope normalizeDN);
 use myPerlLDAP::Entry;
 use myPerlLDAP::SearchResults;
 
-use vars qw($VERSION);
+use vars qw($VERSION $_D);
 
 $VERSION = "0.0.1";
+$_D = 1;
 
 #############################################################################
 # Creator, create and initialize a new LDAP object ("connection"). We support

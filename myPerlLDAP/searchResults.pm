@@ -6,11 +6,11 @@ use Mozilla::OpenLDAP::API 1.4 qw(/.+/);
 use strict;
 use Carp;
 
-use vars qw($VERSION);
+use vars qw($VERSION $_D);
 
 $VERSION = "0.0.1";
 
-my $_D = 1;
+$_D = 1;
 
 # TODO:
 #   - firstNetry
