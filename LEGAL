@@ -1,0 +1,12 @@
+This module is based on pieces code from Mozilla::perLDAP I used parts from it
+as described latter:
+
+  Mozilla::perLDAP::Conn - heavy modified some functions were deleted, some
+      moved, others changed. Before each function is short notice informing
+      what I did to it.
+
+  Mozilla::perLDAP::Entry - I wrote my own Entry from scratch
+
+  Mozilla::perLDAP::Utils - I grabed from it *only* function which are needed
+      for myPerlLDAP::Conn work. Again before function's code is notice about
+      it's source.
