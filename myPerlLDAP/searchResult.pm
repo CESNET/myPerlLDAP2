@@ -28,6 +28,7 @@ use perlOpenLDAP::API 1.4 qw(ldap_first_entry ldap_next_entry ldap_msgfree
 			     ldap_ber_free ldap_count_entries);
 use myPerlLDAP::attribute;
 use strict;
+use Data::Dumper;
 use Carp;
 
 use vars qw($_D @ISA %fields);
@@ -35,7 +36,9 @@ use vars qw($_D @ISA %fields);
 @ISA = ("myPerlLDAP::abstract");
 
 %fields = (
-	   debug => 1,
+	   debug  => 1,
+	   sEntr  => undef,
+	   sEntrI => 0,
 	  );
 
 # TODO:
@@ -45,6 +48,8 @@ sub new {
   my $proto = shift;
   my $class = ref($proto) || $proto;
   my $self = bless $class->SUPER::new(@_), $class;
+  my %FIELDS = (%{$self->{_permitted_fields}}, %fields);
+  $self->{_permitted_fields} = \%FIELDS;
   $self->debug($_D);
 
   return unless $self->init(@_);
@@ -104,67 +109,77 @@ sub addValues2Entry {
 #
 sub nextEntry {
   my $self = shift;
-  my (%entry, @vals);
-  my ($attr, $lcattr, $ldentry, $berv, $dn, $count);
-  my ($ber) = \$berv;
 
-  my $entry = new myPerlLDAP::entry;
-  $entry->owner($self->owner);
-
-  if ($self->{"ldfe"} == 1) {
-    return unless defined($self->{"ldres"});
-
-    $self->{"ldfe"} = 0;
-    $ldentry = ldap_first_entry($self->{"ld"}, $self->{"ldres"});
-    $self->{"ldentry"} = $ldentry;
+  if (defined($self->sEntr)) {
+    my $entry = $self->sEntr->{$self->{sEntrI}++};
+    return $entry;
   } else {
-    return unless defined($self->{"ldentry"});
+    my (%entry, @vals);
+    my ($attr, $lcattr, $ldentry, $berv, $dn, $count);
+    my ($ber) = \$berv;
 
-    $ldentry = ldap_next_entry($self->{"ld"}, $self->{"ldentry"});
-    $self->{"ldentry"} = $ldentry;
-  };
+    my $entry = new myPerlLDAP::entry;
+    $entry->owner($self->owner);
 
-  if (! $ldentry) {
-    #if (defined($self->{"ldres"})) {
-    #  ldap_msgfree($self->{"ldres"});
-    #  undef $self->{"ldres"};
-    #}
-    return undef;
-  };
+    if ($self->{"ldfe"} == 1) {
+      return unless defined($self->{"ldres"});
 
-  $dn = ldap_get_dn($self->{"ld"}, $self->{"ldentry"});
-  $entry->dn($dn);
+      $self->{"ldfe"} = 0;
+      $ldentry = ldap_first_entry($self->{"ld"}, $self->{"ldres"});
+      $self->{"ldentry"} = $ldentry;
+    } else {
+      return unless defined($self->{"ldentry"});
 
-  $attr = ldap_first_attribute($self->{"ld"}, $self->{"ldentry"}, $ber);
-  $entry->clearModifiedFlags;
-  return $entry unless $attr;
+      $ldentry = ldap_next_entry($self->{"ld"}, $self->{"ldentry"});
+      $self->{"ldentry"} = $ldentry;
+    };
 
-  $lcattr = lc $attr;
-  @vals = ldap_get_values_len($self->{"ld"}, $self->{"ldentry"}, $attr);
-  $self->addValues2Entry($entry, $lcattr, \@vals);
+    if (! $ldentry) {
+      #if (defined($self->{"ldres"})) {
+      #  ldap_msgfree($self->{"ldres"});
+      #  undef $self->{"ldres"};
+      #}
+      return undef;
+    };
 
-  $count = 1;
-  while ($attr = ldap_next_attribute($self->{"ld"},
-				     $self->{"ldentry"}, $ber)) {
+    $dn = ldap_get_dn($self->{"ld"}, $self->{"ldentry"});
+    $entry->dn($dn);
+
+    $attr = ldap_first_attribute($self->{"ld"}, $self->{"ldentry"}, $ber);
+    $entry->clearModifiedFlags;
+    return $entry unless $attr;
+
     $lcattr = lc $attr;
     @vals = ldap_get_values_len($self->{"ld"}, $self->{"ldentry"}, $attr);
-
     $self->addValues2Entry($entry, $lcattr, \@vals);
 
-    $count++;
+    $count = 1;
+    while ($attr = ldap_next_attribute($self->{"ld"},
+				     $self->{"ldentry"}, $ber)) {
+      $lcattr = lc $attr;
+      @vals = ldap_get_values_len($self->{"ld"}, $self->{"ldentry"}, $attr);
+
+      $self->addValues2Entry($entry, $lcattr, \@vals);
+
+      $count++;
+    };
+
+    ldap_ber_free($ber, 0) if $ber;
+
+    $entry->clearModifiedFlags;
+    return $entry;
   };
-
-  ldap_ber_free($ber, 0) if $ber;
-
-  $entry->clearModifiedFlags;
-  return $entry;
 };
 
 # Allows using nextEntry from beginning
 sub reset {
   my $self = shift;
 
-  $self->{"ldfe"} = 1;
+  if (defined($self->sEntr)) {
+    $self->sEntr(0);
+  } else {
+    $self->{"ldfe"} = 1;
+  };
 };
 
 # Return count of returned entries
@@ -172,6 +187,65 @@ sub count {
   my $self = shift;
 
   return ldap_count_entries($self->{"ld"}, $self->{"ldres"});
+};
+
+sub cmpEntryNode {
+  my $aCount = scalar @{$a->{sortKey}};
+  my $bCount = scalar @{$b->{sortKey}};
+
+  if ($aCount != $bCount) {
+    warn "sortKey count missmatch sorting by dn";
+    return ($a->{entry}->dn cmp $b->{entry}->dn);
+  };
+
+  for(my $i=0; $i<$aCount; $i++) {
+    my $cmp = $a->{sortKey}->[$i] cmp $b->{sortKey}->[$i];
+    return $cmp if ($cmp != 0);
+  };
+
+  return 0;
+};
+
+sub sort {
+  my $self = shift;
+  my @sortBy = @_;
+
+  return undef unless @sortBy;
+
+  my %entries;
+  my %sortedEntries;
+  my $counter=0;
+
+  my $entry = $self->nextEntry;
+  while ($entry) {
+    my $key = $entry->dn;
+    my @sortKeyValues;
+    foreach my $sortKey (@sortBy) {
+      my $values = $entry->getValues($sortKey);
+      my $valuesCount = (scalar @{$values});
+      if ($valuesCount == 0) {
+	# There is no value, but we were required to sort by... so empty string
+	# is IMHO best choice
+	push @sortKeyValues, '';
+      } else {
+	# How about multiple values?? Taking just first!
+	push @sortKeyValues, $values->[0];
+      };
+    };
+    $entries{$key} = {sortKey => \@sortKeyValues,
+		      entry => $entry};
+    $entry = $self->nextEntry;
+  };
+  $self->reset;
+
+  foreach my $entryNode (sort cmpEntryNode values %entries) {
+    $sortedEntries{$counter++} = $entryNode->{entry};
+  };
+
+  $self->sEntr(\%sortedEntries);
+  $self->sEntrI(0);
+
+  return 1;
 };
 
 sub owner {
