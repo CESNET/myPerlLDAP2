@@ -103,6 +103,8 @@ sub AUTOLOAD {
 sub clearModifiedFlags {
   my $self = shift;
 
+  warn "clearModifiedFlags";
+  
   $self->attrChanges([]);
   $self->attrInit({});
 
@@ -340,7 +342,6 @@ sub makeModificationRecord {
 
   foreach $attr ($self->attributesList) {
     if (($self->attr($attr)->getModifiedFlag()) and (!defined($rec{$attr}))) {
-
       # TODO: This is nasty. I'm replacing whole attribute, but now
       # I don't have much time ... to do better implementation I will
       # need modify myPerlLDAP::attribute to be able produce modificaion
