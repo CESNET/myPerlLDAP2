@@ -399,7 +399,9 @@ sub setValues {
 
   my $attr = $self->attr($attrName);
   if (!defined($attr)) {
-    return $self->addValues($attrName, @_);
+    my $res = $self->addValues($attrName, @_);
+    $attr = $self->attr($attrName);
+    $attr->{_cleared} = 1; # 3x FUJ!!!
   } else {
     $attr->clearValues;
     return $self->addValues($attrName, @_);
@@ -486,6 +488,8 @@ sub clearModifiedFlags {
     $self->attr($attr)->clearModifiedFlag;
     $self->attrInit->{$attr}=1;
   };
+
+#  warn "$self->clearModifiedFlags";
 };
 
 sub isModified {
