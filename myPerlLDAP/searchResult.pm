@@ -20,7 +20,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # #############################################################################
 
-package myPerlLDAP::searchResults;
+package myPerlLDAP::searchResult;
 
 use perlOpenLDAP::API 1.4 qw(ldap_first_entry ldap_next_entry ldap_msgfree
 			     ldap_get_dn ldap_first_attribute
@@ -35,7 +35,7 @@ use vars qw($_D @ISA %fields);
 @ISA = ("myPerlLDAP::abstract");
 
 %fields = (
-	   debug => 1;
+	   debug => 1,
 	  );
 
 # TODO:
