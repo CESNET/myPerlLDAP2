@@ -208,14 +208,17 @@ sub search {
 
   if (ldap_is_ldap_url($filter)) {
     if (! ldap_url_search_s($self->{"ld"}, $filter, $attrsonly, $res)) {
-       return new myPerlLDAP::searchResults($self->{ld}, $res);
+      my $sRes = new myPerlLDAP::searchResults($self->{ld}, $res);
+      return $sRes;
     };
   } else {
     if (! ldap_search_s($self->{"ld"}, $basedn, $scope, $filter,
 			defined(\@attrs) ? \@attrs : 0,
 			defined($attrsonly) ? $attrsonly : 0,
 			defined($res) ? $res : 0)) {
-      return new myPerlLDAP::searchResults($self->{ld}, $res);
+      my $sRes = new myPerlLDAP::searchResults($self->{ld}, $res);
+      $sRes->owner($self);
+      return $sRes;
     };
   };
 

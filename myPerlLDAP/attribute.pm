@@ -28,6 +28,7 @@ $_D = 1;
            debug         => $_D,
            modified      => undef,
            name          => undef,
+	   owner         => undef,
 	  );
 
 =head1 NAME
@@ -427,7 +428,9 @@ sub XML {
   } else {
     push @ret, "<dsml:attr name=\"".$self->name."\">";
     foreach my $type (@{$self->types}) {
-      foreach $value (@{$self->get($type)}) {
+      my $getMethod='get';
+      $getMethod = 'humanReadableForm' if ($self->can('humanReadableForm'));
+      foreach $value (@{$self->$getMethod($type)}) {
 	my $TYPE = "";
 	$TYPE = " type=\"$type\"" if ($type);
 	push @ret, "  <dsml:value$TYPE>$value</dsml:value>";

@@ -26,6 +26,7 @@ $_D = 1;
 %fields = (
 	   dn          => undef,
 	   debug       => $_D,
+	   owner       => undef,
 	   attrData    => {},
 	   attrOrder   => [],
 	   attrChanges => [],
@@ -193,6 +194,8 @@ sub add {
     return undef;
   };
 
+  $attr->owner($self);
+
   push @{$self->attrOrder}, ($attr->name);
   push @{$self->attrChanges}, ("+".$attr->name);
   $self->attrData->{$attr->name}=$attr;
@@ -246,9 +249,11 @@ sub addAsValues {
       $class = 'myPerlLDAP::attribute';
     };
   };
+  warn "$attr -> $class";
 
   # Create and add new attribute
   my $new_attr = $class->new($attr);
+  $new_attr->owner($self);
   my $RO = $new_attr->readOnly;
   $new_attr->readOnly=0 if $RO;
 
