@@ -1,3 +1,9 @@
+libmyperlldap-attribute-perl (1.69-1) unstable; urgency=low
+
+  * To keep version numbers in sync
+
+ -- Jan Tomasek <jan@tomasek.cz>  Thu,  6 May 2003 15:37:31 +0200
+
 libmyperlldap-attribute-perl (1.64-1) unstable; urgency=low
 
   * To keep version numbers in sync
