@@ -1,3 +1,17 @@
+2003-06-05  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.70
+	* myPerlLDAP/conn.pm, t/09-bind.t: Constructor 'constructor' renamed
+		to 'construct'.
+	* myPerlLDAP/conn.pm:
+		Function connect was removed. All what is needed is in init,
+		if you need returned error code, use $conn->error for error
+		string use $conn->errorMessage.
+	* t/09-bind.t: Initial commit
+	* myPerlLDAP/conn.pm: Initial version of new methods constructor
+		and connect.
+	* myPerlLDAP/conn.pm: ldap_url_search_s is no longer suported by
+		perlOpenLDAP
+
 2003-05-06  Jan Tomasek  <jan@tomasek.cz>
 	* Version: 1.69
 	* myPerlLDAP/conn.pm: ldap_url_search_s is no longer suported
