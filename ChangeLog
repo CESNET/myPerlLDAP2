@@ -1,4 +1,10 @@
 2003-10-14  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.72
+	* myPerlLDAP/searchResult.pm: It's getting more and more ugly.
+		Something like czech sorting.
+
+2003-10-14  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.71
 	* myPerlLDAP/searchResult.pm, t/50-sort.t: Implemented sorting
 
 2003-06-05  Jan Tomasek  <jan@tomasek.cz>
