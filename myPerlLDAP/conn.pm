@@ -526,6 +526,19 @@ sub modifyRDN {
   return (($ret == LDAP_SUCCESS) ? 1 : 0);
 }; # modifyRDN --------------------------------------------------------------
 
+sub secureModRecord {
+  my $rec = shift;
+
+  $rec->{userpassword} = ['values removed from debug for security reasons']
+    if (defined($rec->{userpassword}));
+  $rec->{tacuserpassword} = ['values removed from debug for security reasons']
+    if (defined($rec->{tacuserpassword}));
+  $rec->{radiuspassword} = ['values removed from debug for security reasons']
+    if (defined($rec->{radiuspassword}));
+
+  return $rec;
+};
+
 #############################################################################
 # Update an object.
 #
@@ -545,8 +558,8 @@ sub update {
     $entry->clearModifiedFlags;
     return 1;
   } else {
-    #print STDERR "Failed to update entry \"".$entry->dn."\"\n".
-    #print STDERR Dumper($rec)."\n";
+    print STDERR "Failed to update entry \"".$entry->dn."\" due \"".$self->errorMessage."\".\n";
+    print STDERR "Modification record: ".Dumper(secureModRecord($rec));
     return undef;
   };
 }; # update -----------------------------------------------------------------
