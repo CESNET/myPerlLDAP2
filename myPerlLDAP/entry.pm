@@ -272,23 +272,31 @@ sub makeModificationRecord {
   foreach $attr (keys %delete) {
     die "This should never happen" if (defined($rec{$attr}));
 
+#    print "delete: $attr<BR>";
+
     $rec{$attr}->{rb}=[];
   };
 
   foreach $attr (keys %add) {
     die "This should never happen" if (defined($rec{$attr}));
 
-    $rec{$attr}->{ab}=$self->attr($attr)->get;
+#    print "add: $attr<BR>";
+
+    $rec{$attr}->{rb}=$self->attr($attr)->get;
   };
 
   foreach $attr (keys %replace) {
     die "This should never happen" if (defined($rec{$attr}));
 
+#    print "replace: $attr<BR>";
+
     $rec{$attr}->{rb}=$self->attr($attr)->get;
   };
 
   foreach $attr ($self->getAttributesList) {
-    if (!defined($rec{$attr})) {
+    if (($self->attr($attr)->getModifiedFlag()) and (!defined($rec{$attr}))) {
+
+#      print "rec: $attr<BR>";
       # TODO: This is nasty. I'm replacing whole attribute, but now
       # I don't have much time ... to do better implementation I will
       # need modify myPerlLDAP::Attribute to be able produce modificaion
