@@ -1,9 +1,15 @@
+libmyperlldap-perl (1.62-2) unstable; urgency=low
+
+  updated package info
+
+ -- Jan Tomasek <jan@tomasek.cz>  Thu, 08 Aug 2002 16:59:00 +0200
+
 libmyperlldap-perl (1.62-1) unstable; urgency=low
 
   new property myPerlLDAP::entry::isModified
   new tests to test that property
 
- -- Jan Tomasek <jan@tomasek.cz>  Mon, 05 Sep 2002 18:28:00 +0200
+ -- Jan Tomasek <jan@tomasek.cz>  Mon, 05 Aug 2002 18:28:00 +0200
 
 libmyperlldap-perl (1.61-1) unstable; urgency=low
 
