@@ -282,7 +282,8 @@ sub compare {
 #
 sub close {
   my $self = shift;
-  my $ret = 1;
+  my $ret = LDAP_SUCCESS; # Originaly was here that assignment $ret = 1 ...
+                          # it never can't work; Actualy this is useles ...
 
   ldap_unbind_s($self->{"ld"}) if defined($self->{"ld"});
   if (defined($self->{"ldres"})) {
