@@ -15,6 +15,7 @@ libmyperlldap-perl (1.50-1) unstable; urgency=low
 	- setValues
 	- removeValues
 	- getValues
+	- matchValues
   * myPerlLDAP:attribute
     * removed module wide variable $_D use %fileds{debug} instead
     * some attribute methods where renamed and modified - no backward
@@ -23,8 +24,10 @@ libmyperlldap-perl (1.50-1) unstable; urgency=low
 	- set => setValues
 	- remove => removeValues
 	- get => getValues
+    * new method
+	- matchValues ... return walues matching regular expression
 
- -- Jan Tomasek <jan@tomasek.cz>  Fri, 03 May 2002 12:03:00 +0200
+ -- Jan Tomasek <jan@tomasek.cz>  Wed, 29 May 2002 21:28:00 +0200
 
 libmyperlldap-perl (1.00-2) unstable; urgency=low
 

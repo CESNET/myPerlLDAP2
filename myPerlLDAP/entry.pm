@@ -441,6 +441,24 @@ sub getValues {
   return $attr->getValues(@_);
 }; # getValues ----------------------------------------------------------------
 
+# #############################################################################
+# Get values of the entry's attribute which match regular expresion. If
+# attribute isn't present set error LDAP_NO_SUCH_ATTRIBUTE and return
+# empty arrayref
+
+sub matchValues {
+  my $self = shift;
+  my $attrName = lc shift;
+
+  my $attr = $self->attr($attrName);
+
+  if (!defined($attr)) {
+    $self->error(LDAP_NO_SUCH_ATTRIBUTE);
+    return [];
+  };
+
+  return $attr->matchValues(@_);
+}; # matchValues --------------------------------------------------------------
 
 sub makeAddRecord {
   my $self = shift;
