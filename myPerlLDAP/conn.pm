@@ -1,10 +1,9 @@
 package myPerlLDAP::Conn;
 
 use strict;
-use Mozilla::OpenLDAP::Conn;
 # TODO: Dont' import all ... mod_perl eff :(
 use Mozilla::OpenLDAP::API 1.4 qw(/.+/);
-use Mozilla::OpenLDAP::Utils qw(str2Scope normalizeDN);
+use myPerlLDAP::Utils qw(str2Scope normalizeDN);
 use myPerlLDAP::Entry;
 use myPerlLDAP::SearchResults;
 
@@ -20,6 +19,8 @@ $_D = 1;
 #
 # Without any changes copied from perLDAP-1.4
 #
+# TODO: For SSL use an betther flag than stupid certdb ... OpenLDAP client
+# isn't now able to work with certs I think.
 sub new {
   my ($class, $self) = (shift, {});
 
@@ -188,8 +189,8 @@ sub printError {
 # Normal LDAP search. Note that this will actually perform LDAP URL searches
 # if the filter string looks like a proper URL.
 #
-# Without any change copied from perLDAP-1.4
-# TODO: CLEAN
+# Based on code from perLDAP-1.4 (they don't have any SerachResults class)
+#
 sub search {
   my ($self, $basedn, $scope, $filter, $attrsonly, @attrs) = @_;
   my ($resv, $entry);
@@ -205,19 +206,13 @@ sub search {
 
   if (ldap_is_ldap_url($filter)) {
     if (! ldap_url_search_s($self->{"ld"}, $filter, $attrsonly, $res)) {
-      #$self->{"ldres"} = $res;
-      #$self->{"ldfe"} = 1;
-      #$entry = $self->nextEntry();
-      return new myPerlLDAP::SearchResults($self->{ld}, $res);
+       return new myPerlLDAP::SearchResults($self->{ld}, $res);
     };
   } else {
     if (! ldap_search_s($self->{"ld"}, $basedn, $scope, $filter,
 			defined(\@attrs) ? \@attrs : 0,
 			defined($attrsonly) ? $attrsonly : 0,
 			defined($res) ? $res : 0)) {
-      #$self->{"ldres"} = $res;
-      #$self->{"ldfe"} = 1;
-      #$entry = $self->nextEntry();
       return new myPerlLDAP::SearchResults($self->{ld}, $res);
     };
   };
