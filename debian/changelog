@@ -1,3 +1,10 @@
+libmyperlldap-perl (1.51-1) unstable; urgency=low
+
+  * class myPerlLDAP::searchResults renamed to searchResult
+  * fixed all tests
+
+ -- Jan Tomasek <jan@tomasek.cz>  Wed, xx Jul 2002 xx:xx:00 +0200
+
 libmyperlldap-perl (1.50-1) unstable; urgency=low
 
   * created class abstract it implements error and errorMessage for
