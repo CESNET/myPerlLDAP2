@@ -52,6 +52,30 @@ sub init {
 };
 
 #############################################################################
+# Add new attribute to entry if necessary and add values to it. Only for
+# internal use by myPerlLDAP::searchResults::nextEntry
+#
+sub addValues2Entry {
+  my $self = shift;
+  my $entry = shift;
+  my $lcattr = shift;
+  my $values = shift;
+
+  $lcattr =~ /(^[^;]+)(;|)(.*?)$/;
+  my $attrName = undef; $attrName = $1 if ($1 ne '');
+  my $valueType = undef; $valueType = $3 if ($3 ne '');
+
+  my $eattr = $entry->attr($attrName);
+  if (defined($eattr)) {
+    $eattr->add($values, $valueType);
+  } else {
+    $entry->addAsValues($attrName, $values, $valueType);
+  };
+
+  return $eattr;
+};
+
+#############################################################################
 # Get an entry from the search, either the first entry, or the next entry,
 # depending on the call order.
 #
@@ -60,7 +84,6 @@ sub init {
 # I don't like way how multiple searches on same ld are done in perlLDAP-1.4
 # so I created this class and moved some code here.
 #
-# TODO: Clean up code ... delete old code!
 sub nextEntry {
   my $self = shift;
   my (%entry, @vals);
@@ -99,19 +122,16 @@ sub nextEntry {
 
   $lcattr = lc $attr;
   @vals = ldap_get_values_len($self->{"ld"}, $self->{"ldentry"}, $attr);
-  if ($lcattr =~ /^[^;]+$/) {
-    $entry->addAsValues($lcattr, @vals);
-  };
+  $self->addValues2Entry($entry, $lcattr, \@vals);
 
   $count = 1;
   while ($attr = ldap_next_attribute($self->{"ld"},
 				     $self->{"ldentry"}, $ber)) {
     $lcattr = lc $attr;
     @vals = ldap_get_values_len($self->{"ld"}, $self->{"ldentry"}, $attr);
-    # TODO: just for now ... I want to work with types ...
-    if ($lcattr =~ /^[^;]+$/) {
-      $entry->addAsValues($lcattr, \@vals);
-    };
+
+    $self->addValues2Entry($entry, $lcattr, \@vals);
+
     $count++;
   };
 
