@@ -1,8 +1,8 @@
 #!/usr/bin/perl -w
-# $Id$
+#$Id$
 
 # #############################################################################
-# myPerlLDAP object oriented interface for work with LDAP
+# myPerlLDAP - object oriented interface for work with LDAP
 # Copyright (C) 2001,02 by Jan Tomasek
 #
 # This library is free software; you can redistribute it and/or
