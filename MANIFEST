@@ -4,7 +4,6 @@ MANIFEST
 MANIFEST.SKIP
 README
 TODO
-build/buildClasses.pl
 debian/README.Debian
 debian/changelog
 debian/control
