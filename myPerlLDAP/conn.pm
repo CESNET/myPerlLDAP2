@@ -67,18 +67,12 @@ $VERSION = "1.70";
 # either providing all parameters as a hash array, or as individual
 # arguments.
 #
-# Without any changes copied from perLDAP-1.4
+# It will not initalize connection to LDAP server!
+#
+# Based on code from perLDAP-1.4
 #
 # TODO: For SSL use an betther flag than stupid certdb ... OpenLDAP client
 # isn't now able to work with certs I think.
-
-sub new {
-  my $self = constructor(@_);
-
-  return unless $self;
-  return unless $self->init();
-  return $self;
-}; # new -------------------------------------------------------------------
 
 sub constructor {
   my $proto = shift;
@@ -121,6 +115,22 @@ sub constructor {
 };
 
 #############################################################################
+# Creator, create and initialize a new LDAP object ("connection"). We support
+# either providing all parameters as a hash array, or as individual
+# arguments.
+#
+# It will initalize connection to LDAP server!
+#
+sub new {
+  my $self = constructor(@_);
+
+  return unless $self;
+  return unless $self->init();
+  return $self;
+}; # new -------------------------------------------------------------------
+
+
+#############################################################################
 # Destructor, makes sure we close any open LDAP connections.
 #
 # Without any changes copied from perLDAP-1.4
@@ -144,13 +154,6 @@ sub DESTROY {
 # for OpenLDAP, and some other minor changes were done by me ... it will
 # not be merged back to constructor I like this way ;-)
 sub init {
-  my $self = shift;
-  my $ret = $self->connect(@_);
-
-  return (($ret == LDAP_SUCCESS) ? 1 : undef);
-} # init --------------------------------------------------------------------
-
-sub connect {
   my ($self) = shift;
   my ($ret, $ld);
 
@@ -173,9 +176,8 @@ sub connect {
   $self->ld($ld);
   $ret = ldap_simple_bind_s($ld, $self->bindDN, $self->bindPasswd);
 
-  return $ret;
-}
-
+  return (($ret == LDAP_SUCCESS) ? 1 : undef);
+} # init --------------------------------------------------------------------
 
 #############################################################################
 # Create a new, empty, Entry object.
