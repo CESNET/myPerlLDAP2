@@ -1,3 +1,8 @@
+2003-02-20  Jan Tomasek  <jan@tomasek.cz>
+	Release 1.66 released
+	* myPerlLDAP/conn.pm: Removed debug output.
+	* myPerlLDAP/conn.pm: Deleted useless varible $entry in method search
+
 2002-09-19  Jan Tomasek <jan@tomasek.cz>
 	Release 1.65 released
 	Fixed bug in myPerlLDAP::entry::removeValues
