@@ -8,7 +8,7 @@ use myPerlLDAP::attribute;
 use Mozilla::OpenLDAP::API qw(LDAP_PORT LDAP_SCOPE_BASE);
 
 use vars qw($VERSION);
-$VERSION = "0.5.1";
+$VERSION = "0.5.2";
 
 $myPerlLDAP::attribute::_D=0;
 
@@ -17,7 +17,7 @@ my %tree; # This is global variable =?> Am I dirty programmer? :))
 my $LDAPServerHost = 'localhost';
 my $LDAPServerPort = LDAP_PORT;
 my $attrClassesPath = "/tmp/myPerlLDAP-ac";
-my $autoClassesPath = "Attribute";
+my $autoClassesPath = "attribute";
 
 my @files;
 
@@ -220,31 +220,6 @@ sub attributeHash2Class {
     $name = lc $name;
     my $init_code = "";
 
-#    my (@k, @v);
-#    do { push @k, "'OID'";
-#	 push @v, "'$attr->{oid}'"} if (defined($attr->{'oid'}));
-#    do { push @k, "'EQUALITY'";
-#	 push @v, "'$attr->{equality}'"} if (defined($attr->{'equality'}));
-#    do { push @k, "'SYNTAX'";
-#	 push @v, "'$syntax'"} if (defined($syntax));
-#    do { push @k, "'DESC'";
-#	 push @v, "'$attr->{desc}'"} if (defined($attr->{'desc'}));
-#    do { push @k, "'SUBSTR'";
-#	 push @v, "'$attr->{substr}'"} if (defined($attr->{'substr'}));
-#    do { push @k, "'ORDERING'";
-#	 push @v, "'$attr->{ordering}'"} if (defined($attr->{'ordering'}));
-#    do { push @k, "'USAGE'";
-#	 push @v, "'$attr->{usage}'"} if (defined($attr->{'usage'}));
-#    do { push @k, "'LENGTH'";
-#	 push @v, "'$length'"} if (defined($length));
-#    do { push @k, "'SINGLEVALUE'";
-#	 push @v, "'1'"} if (defined($attr->{'singleValue'}));
-#    do { push @k, "'READONLY'";
-#	 push @v, "'1'"} if (defined($attr->{'readOnly'}));
-#    $init_code = '  @{$self}{'.join(",\n           ", @k)."} 
-#    =
-#          (".join(",\n           ", @v).");";
-
     my @f;
     push @f, "OID => '".$attr->{oid}."'" if (defined($attr->{'oid'}));
     push @f, "equality => '".$attr->{equality}."'" if (defined($attr->{'equality'}));
@@ -294,7 +269,7 @@ $fields
 sub new {
   my \$proto = shift;
   my \$class = ref(\$proto) || \$proto;
-  my \$self = bless \$class->SUPER::new(@_), \$class;
+  my \$self = bless \$class->SUPER::new(\@_), \$class;
 
   foreach my \$element (keys \%fields) {
     \$self->{_permitted_fields}->{\$element} = \$fields{\$element};
@@ -376,7 +351,7 @@ $LDAPServerPort = readAnswer("LDAP server port", $LDAPServerPort);
 $attrClassesPath = readAnswer("Where do you want to write clases", $attrClassesPath);
 
 mkdir("$attrClassesPath");
-mkdir("$attrClassesPath/Attribute");
+mkdir("$attrClassesPath/attribute");
 
 my $conn = new myPerlLDAP::conn({"host"   => $LDAPServerHost,
 				 "port"   => $LDAPServerPort})
@@ -456,7 +431,7 @@ WriteMakefile(
     'VERSION'       => '$VERSION',
     'AUTHOR'        => 'Jan Tomasek <jan\@tomasek.cz>',
     'DISTNAME'      => 'myPerlLDAP-auto-attributes',
-    'PMLIBDIRS'     => ['Attribute'],
+    'PMLIBDIRS'     => ['attribute'],
 );\n";
 close(MAKEFILEPL);
 
