@@ -1,24 +1,39 @@
 #!/usr/bin/perl -w
 
-package myPerlLDAP::Attribute;
+package myPerlLDAP::attribute;
 
 use strict;
 
-use myPerlLDAP::Attribute::_OID;
-
 use Carp;
-use vars qw($VERSION  $_D);
+use vars qw($VERSION  $_D $AUTOLOAD %fields);
 
-$VERSION = "0.0.1";
+$VERSION = "0.5.0";
 
 # Debug levels:
-#  1 ... warnings about nasty class usage (trying set value of read-only attr ...)
+#  1 ... warnings about nasty class usage
 # 10 ... excution of some methods
 $_D = 1;
 
+%fields = (
+           description   => undef,
+           OID           => undef,
+           equality      => undef,
+           syntax        => undef,
+           subStr        => undef,
+           ordering      => undef,
+           usage         => undef,
+           length        => undef,
+           singleValue   => 0,     # By default multiple values
+           readOnly      => 0,     # By default modifyable?
+           debug         => $_D,
+           modified      => undef,
+           values        => undef,
+           name          => undef,
+	  );
+
 =head1 NAME
 
-Attribute
+attribute
 
 =head1 DESCRIPTION
 
@@ -32,22 +47,21 @@ sub new {
   my $proto = shift;
   my $class = ref($proto) || $proto;
   my $requestedClass = lc shift;
-  my $self  = {};
 
-  if (eval "require myPerlLDAP::Attribute::$requestedClass" ) {
-    $class = "myPerlLDAP::Attribute::$requestedClass";
+  if (eval "require myPerlLDAP::attribute::$requestedClass" ) {
+    $class = "myPerlLDAP::attribute::$requestedClass";
   } else {
-    if ($_D || $self->{_D}) {
-      carp("$_D Can't load module \"myPerlLDAP::Attribute::$requestedClass\" attribute \"$requestedClass\" created as \"$class\"");
+    if ($_D) {
+      carp("Can't load module \"myPerlLDAP::attribute::$requestedClass\" attribute \"$requestedClass\" created as \"$class\"");
     };
   };
 
-  bless($self, $class);
+  my $self = bless {_permitted_fields => \%fields, %fields}, $class;
 
-  $self->{NAME} = $requestedClass;
-  $self->init();
+  $self->name($requestedClass);
+  $self->init;
 
-  if (($_D >= 10) || ($self->{_D} >= 10)) {
+  if (($_D >= 10) || ($self->debug >= 10)) {
     carp("$self created");
   };
 
@@ -56,52 +70,50 @@ sub new {
 
 =item init
 
-bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla 
+bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla
 
-bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla 
+bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla
 
 =cut
 
 sub init {
   my $self = shift;
 
-  # TODO: jako jedno prirazeni
-  $self->{DESC} = undef;
-  $self->{OID} = undef;
-  $self->{EQUALITY} = undef;
-  $self->{SYNTAX} = undef;
-  $self->{SUBSTR} = undef;
-  $self->{ORDERING} = undef;
-  $self->{USAGE} = undef;
-  $self->{LENGTH} = undef;
-  $self->{SINGEVALUE} = 0; # By default multiple values
-  $self->{READONLY} = 0;   # By default modifyable?
-
-  $self->{_D} = $_D;
-
-  $self->{VALUES} = undef;
-  $self->{MODIFIED} = undef;
-
-  if (($_D >= 10) || ($self->{_D} >= 10)) {
+  if (($_D >= 10) || ($self->debug >= 10)) {
     carp("$self initiated");
   };
 };
 
+
 sub DESTROY {
   my $self = shift;
 
-  if (($_D >= 10) || ($self->{_D} >= 10)) {
+  if (($_D >= 10) || ($self->debug >= 10)) {
     carp("$self destroyed");
   };
 };
 
-sub debug {
+sub AUTOLOAD {
   my $self = shift;
+  my $class = ref($self)
+    or carp "cannot call method $AUTOLOAD on non reference $self";
+  my $name = $AUTOLOAD;
+  $name =~ s/.*://;
 
-  if (ref($self)) {
-    $self->{_D} = shift;
+  if (exists $self->{_permitted_fields}->{$name}) {
+    if (@_) {
+      return $self->{$name} = shift;
+    } else {
+      return $self->{$name};
+    };
+  } elsif ($name eq 'DESTROY') {
+    if ($self->can('DESTROY')) {
+      $self->DESTROY;
+    } else {
+      return;
+    };
   } else {
-    $_D = shift;
+    carp "Can't access method '$name' in class $class";
   };
 };
 
@@ -118,7 +130,7 @@ sub count {
 sub set {
   my $self = shift;
 
-  if ($self->isReadOnly) {
+  if ($self->readOnly) {
     # This READ ONLY attribute we can't change it
     if ($_D || $self->{_D}) {
       carp("Attempt to change read-only object $self");
@@ -143,7 +155,7 @@ sub set {
 
   foreach $value (@$values) {
     push @values, $self->checkFixLength($value);
-    if (($self->isSingleValue) and (scalar @values)) {
+    if (($self->singleValue) and (scalar @values)) {
       # This attribute is only single value so we take only first
       if ((@$values > 1) and ($_D || $self->{_D})) {
 	carp("more than one value passed to singe-value attribute $self");
@@ -162,9 +174,9 @@ sub set {
 sub add {
   my $self = shift;
 
-  if ($self->isReadOnly) {
+  if ($self->readOnly) {
     # This READ ONLY attribute we can't change it
-    if ($_D || $self->{_D}) {
+    if ($_D || $self->debug) {
       carp("Attempt to change read-only object $self");
     };
     return undef;
@@ -172,15 +184,15 @@ sub add {
 
   if (!(scalar @_)) {
     # No value suplied
-    if ($_D || $self->{_D}) {
+    if ($_D || $self->debug) {
       carp("$self\->add() called without any value");
     };
     return undef;
   };
 
-  if (($self->isSingleValue) and (scalar @{$self->{VALUES}})) {
+  if (($self->singleValue) and (scalar @{$self->{VALUES}})) {
     # This attribute is only single value and value is set
-    if ($_D || $self->{_D}) {
+    if ($_D || $self->debug) {
       carp("$self\->add() another value passed to single-value attribute");
     };
     return undef;
@@ -195,15 +207,15 @@ sub add {
 
   foreach $value (@$values) {
     if ($self->has($value)) {
-      if ($_D || $self->{_D}) {
+      if ($_D || $self->debug) {
 	carp("$self\->add() same value=\"$value\" passed to attribute");
       };
     } else {
       push @values, $self->checkFixLength($value);
     };
-    if (($self->isSingleValue) and (scalar @values)) {
+    if (($self->singleValue) and (scalar @values)) {
       # This attribute is only single value so we take only first
-      if ((@$values > 1) and ($_D || $self->{_D})) {
+      if ((@$values > 1) and ($_D || $self->debug)) {
 	carp("more than one value passed to singe-value attribute $self");
 	goto ENDFOREACH;
       };
@@ -222,9 +234,9 @@ sub add {
 sub remove {
   my $self = shift;
 
-  if ($self->isReadOnly) {
+  if ($self->readOnly) {
     # This READ ONLY attribute we can't change it
-    if ($_D || $self->{_D}) {
+    if ($_D || $self->debug) {
       carp("Attempt to change read-only object $self");
     };
     return 0;
@@ -282,7 +294,7 @@ sub has {
       };
     };
   } else {
-    if ($_D || $self->{_D}) {
+    if ($_D || $self->debug) {
       carp("$self\->has() called without any value");
     };
     return undef;
@@ -317,12 +329,12 @@ sub checkFixLength {
   my $self = shift;
   my $value = shift;
 
-  if (defined($self->{LENGTH})) {
-    if (length($value)>$self->{LENGTH}) {
-      if ($_D || $self->{_D}) {
+  if (defined($self->length)) {
+    if (length($value)>$self->length) {
+      if ($_D || $self->debug) {
 	carp("$self\->checkFixLength() truncated value to $self->{LENGTH} length");
       };
-      return substr($value, 0, $self->{LENGTH});
+      return substr($value, 0, $self->length);
     };
   };
 
@@ -332,85 +344,19 @@ sub checkFixLength {
 sub setModifiedFlag {
   my $self = shift;
 
-  $self->{MODIFIED} = 1;
+  $self->modified(1);
 };
 
 sub getModifiedFlag {
   my $self = shift;
 
-  return $self->{MODIFIED};
+  return $self->modified;
 };
 
 sub clearModifiedFlag {
   my $self = shift;
 
-  $self->{MODIFIED} = undef;
-};
-
-sub description {
-  my $self = shift;
-
-  return $self->{DESC};
-};
-
-sub oid {
-  my $self = shift;
-
-  return $self->{OID};
-};
-
-sub equality {
-  my $self = shift;
-
-  return $self->{EQUALITY};
-};
-
-sub syntax {
-  my $self = shift;
-
-  return $self->{SYNTAX};
-};
-
-sub substr {
-  my $self = shift;
-
-  return $self->{SUBSTR};
-};
-
-sub ordering {
-  my $self = shift;
-
-  return $self->{ORDERING};
-};
-
-sub usage {
-  my $self = shift;
-
-  return $self->{USAGE};
-};
-
-sub length {
-  my $self = shift;
-
-  return $self->{LENGTH};
-};
-
-sub isSingleValue {
-  my $self = shift;
-
-  return $self->{SINGLEVALUE};
-};
-
-sub isReadOnly {
-  my $self = shift;
-
-  return $self->{READONLY};
-};
-
-sub name {
-  my $self = shift;
-
-  return $self->{NAME};
+  $self->modified(undef);
 };
 
 sub className {

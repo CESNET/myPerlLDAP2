@@ -1,13 +1,13 @@
-package myPerlLDAP::Attribute::_Audio;
+package myPerlLDAP::attribute::_audio;
 
 use strict;
-use myPerlLDAP::Attribute;
+use myPerlLDAP::attribute;
 
 use vars qw($VERSION @ISA);
 
 
-$VERSION = "0.0.1";
+$VERSION = "0.5.0";
 
-@ISA = ("myPerlLDAP::Attribute");
+@ISA = ("myPerlLDAP::attribute");
 
 1;
