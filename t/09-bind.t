@@ -39,8 +39,8 @@ $myPerlLDAP::attribute::_D=0;
 
 # - 2 -----------------------------------------------------------------------
 $SOK = 1;
-my $conn = constructor myPerlLDAP::conn({"host"   => $C::LDAPServerHost,
-					 "port"   => $C::LDAPServerPort})
+my $conn = construct myPerlLDAP::conn({"host"   => $C::LDAPServerHost,
+				       "port"   => $C::LDAPServerPort})
   or $SOK = 0;
 print "not ok 2\n" unless $SOK;
 print "ok 2\n" if $SOK;
@@ -53,10 +53,10 @@ print "ok 3\n" if $SOK;
 
 # - 4 -----------------------------------------------------------------------
 $SOK = 1;
-$conn = constructor myPerlLDAP::conn({"host"   => $C::LDAPServerHost,
-				      "port"   => $C::LDAPServerPort,
-				      "bind"   => $C::BindDN,
-				      "pswd"   => $C::BindPasswd.'XXX'})
+$conn = construct myPerlLDAP::conn({"host"   => $C::LDAPServerHost,
+				    "port"   => $C::LDAPServerPort,
+				    "bind"   => $C::BindDN,
+				    "pswd"   => $C::BindPasswd.'XXX'})
   or $SOK = 0;
 print "not ok 4\n" unless $SOK;
 print "ok 4\n" if $SOK;
@@ -70,10 +70,10 @@ print "ok 5\n" unless $SOK;
 
 # - 6 -----------------------------------------------------------------------
 $SOK = 1;
-$conn = constructor myPerlLDAP::conn({"host"   => $C::LDAPServerHost,
-				      "port"   => $C::LDAPServerPort,
-				      "bind"   => $C::BindDN,
-				      "pswd"   => $C::BindPasswd})
+$conn = construct myPerlLDAP::conn({"host"   => $C::LDAPServerHost,
+				    "port"   => $C::LDAPServerPort,
+				    "bind"   => $C::BindDN,
+				    "pswd"   => $C::BindPasswd})
   or $SOK = 0;
 print "not ok 6\n" unless $SOK;
 print "ok 6\n" if $SOK;
