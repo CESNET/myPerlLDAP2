@@ -1,3 +1,9 @@
+libmyperlldap-perl (1.62-4) unstable; urgency=low
+
+  * libmyperlldap -> libmyperlldap-perl 
+
+ -- Jan Tomasek <honza@semik.cesnet.cz>  Tue, 27 Aug 2002 10:32:31 +0200
+
 libmyperlldap-perl (1.62-3) unstable; urgency=low
 
   * fixed typo in control file 
