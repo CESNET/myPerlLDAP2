@@ -5,7 +5,7 @@ package myPerlLDAP::utils;
 use strict;
 use vars qw($VERSION @ISA %EXPORT_TAGS);
 
-use Mozilla::OpenLDAP::API qw(LDAP_SCOPE_SUBTREE LDAP_SCOPE_BASE LDAP_SCOPE_ONELEVEL ldap_explode_dn);
+use perlOpenLDAP::API qw(LDAP_SCOPE_SUBTREE LDAP_SCOPE_BASE LDAP_SCOPE_ONELEVEL ldap_explode_dn);
 
 @ISA = qw(Exporter);
 $VERSION = "0.0.1";

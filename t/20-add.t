@@ -5,7 +5,7 @@ BEGIN { $| = 1; print "1..4\n";}
 
 use lib qw(/home/honza/proj/myPerlLDAP);
 use strict;
-use Mozilla::OpenLDAP::API qw(LDAP_PORT LDAPS_PORT LDAP_SCOPE_BASE);
+use perlOpenLDAP::API qw(LDAP_PORT LDAPS_PORT LDAP_SCOPE_BASE);
 use myPerlLDAP::conn;
 use myPerlLDAP::entry;
 use myPerlLDAP::attribute;

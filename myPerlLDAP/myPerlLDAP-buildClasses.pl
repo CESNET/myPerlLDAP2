@@ -5,7 +5,7 @@ use lib qw(..);
 use strict;
 use myPerlLDAP::conn;
 use myPerlLDAP::attribute;
-use Mozilla::OpenLDAP::API qw(LDAP_PORT LDAP_SCOPE_BASE);
+use perlOpenLDAP::API qw(LDAP_PORT LDAP_SCOPE_BASE);
 
 use vars qw($VERSION);
 $VERSION = "0.5.2";
