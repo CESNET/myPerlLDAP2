@@ -90,7 +90,7 @@ sub addValues2Entry {
   if (defined($eattr)) {
     $eattr->add($values, $valueType);
   } else {
-    $entry->addAsValues($attrName, $values, $valueType);
+    $entry->addValues($attrName, $values, $valueType);
   };
 
   return $eattr;

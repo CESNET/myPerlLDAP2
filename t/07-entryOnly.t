@@ -20,7 +20,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # #############################################################################
 
-BEGIN { $| = 1; print "1..6\n";}
+BEGIN { $| = 1; print "1..13\n";}
 
 use lib qw(/home/honza/proj/myPerlLDAP);
 use strict;
@@ -33,6 +33,9 @@ use myPerlLDAP::searchResults;
 use myPerlLDAP::utils;
 use myPerlLDAP::conn;
 use t::C;
+
+$myPerlLDAP::attribute::fields{debug}=0;
+$myPerlLDAP::entry::fields{debug}=0;
 
 $SOK = 1;
 print "ok 1\n" if $SOK;
@@ -83,6 +86,55 @@ $SOK = 1;
 $entry->addAttr($mail, $givenName)==2 or $SOK=0;
 print "not ok 6\n" unless $SOK;
 print "ok 6\n" if $SOK;
+
+# Test adding to singleValue attr
+$SOK = 0;
+$entry->attr('uidNumber')->addValues(10000) or $SOK=1;
+print "not ok 7\n" unless $SOK;
+print "ok 7\n" if $SOK;
+
+# Test adding to readOnly attr
+$SOK = 0;
+$entry->attr('mail')->readOnly(1);
+$entry->attr('mail')->addValues('nobody@nowhere.com') or $SOK=1;
+$entry->attr('mail')->readOnly(0);
+print "not ok 8\n" unless $SOK;
+print "ok 8\n" if $SOK;
+
+# Test removing values
+$SOK = 1;
+$entry->attr('mail')->removeValues('test2@testing.universe') or $SOK=0;
+print "not ok 9\n" unless $SOK;
+print "ok 9\n" if $SOK;
+
+# Test removing multiple and not existing values
+$SOK = 1;
+$entry->attr('mail')->removeValues(['test2@testing.universe',
+				    'test3@testing.universe'])==1 or $SOK=0;
+print "not ok 10\n" unless $SOK;
+print "ok 10\n" if $SOK;
+
+# Test removing values of not existing attribute
+$SOK = 1;
+$entry->removeValues('businessCategory', ['SLA1',
+					  'BFU2'])==0 or $SOK=0;
+print "not ok 11\n" unless $SOK;
+print "ok 11\n" if $SOK;
+
+# Test seting values of existing attribute
+$SOK = 1;
+$entry->setValues('mail', ['test1@cesnet.cz',
+			   'test2@cesnet.cz'])==2 or $SOK=0;
+print "not ok 12\n" unless $SOK;
+print "ok 12\n" if $SOK;
+
+# Test seting values of notexisting attribute
+$SOK = 1;
+$entry->setValues('businesCattegory', ['SLA1',
+				       'BFU2'])==2 or $SOK=0;
+print "not ok 13\n" unless $SOK;
+print "ok 13\n" if $SOK;
+
 
 #print $entry->XMLString;
 
