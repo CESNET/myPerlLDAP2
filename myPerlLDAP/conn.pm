@@ -636,7 +636,17 @@ sub readACI {
     $aci->owner($self);
     return $aci;
   } else {
-    die "myPerlLDAP::readACI: XXXXXXXXXXXXXXXXXXX";
+    my %hash;
+    $hash{'aclrights;entrylevel'} = ['add:0,delete:0,read:1,write:0,proxy:0'];
+    foreach my $attr (@attrs) {
+      $hash{"aclrights;attributelevel;$attr"} = ['search:1,read:1,compare:1,write:0,selfwrite_add:0,selfwrite_delete:0,proxy:0'];
+    };
+
+    my $aci = new myPerlLDAP::aci;
+    $aci->initFromHash(\%hash);
+
+    return $aci
+#    die "myPerlLDAP::readACI: XXXXXXXXXXXXXXXXXXX";
   };
 };
 
