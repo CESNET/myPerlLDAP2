@@ -224,13 +224,14 @@ sub attributeHash2Class {
   };
 
   if (defined($syntax)) {
-    $superclass="myPerlLDAP::attribute::$superclasses->{$syntax}";
+    $superclass="myPerlLDAP::attribute::".$superclasses->{$syntax};
   } elsif ((!defined($syntax)) or ()) {
     $superclass="myPerlLDAP::attribute::".lc($attr->{sup});
   } else {
     warn "This should never happen. Coding error! Please report conditions.";
     return 0;
   };
+  #print "1 $name $superclass\n";
 
   my ($name, $classDefiniton, $classHash);
   for $name (@{$attr->{name}}) {
@@ -256,6 +257,7 @@ sub attributeHash2Class {
 
     push @files, "$autoClassesPath/$name\.pm";
     open(CLASS, ">$attrClassesPath/$autoClassesPath/$name\.pm") or die "Can't open file $attrClassesPath/$autoClassesPath/$name\.pm for writing";
+    #print "2 $name $superclass\n";
     print CLASS <<EOF
 #!/usr/bin/perl -w
 
@@ -304,8 +306,9 @@ EOF
      my @array;
      $tree{$superclass}=\@array;
    };
-   $superclass =~ s/.*:://;
-   push(@{$tree{$superclass}}, $name);
+   my $superClass = $superclass;
+   $superClass =~ s/.*:://;
+   push(@{$tree{$superClass}}, $name);
   };
 
   return 1;
