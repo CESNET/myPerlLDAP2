@@ -10,4 +10,6 @@ $VERSION = "0.5.0";
 
 @ISA = ("myPerlLDAP::attribute");
 
+
+
 1;
