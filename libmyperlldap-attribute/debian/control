@@ -1,7 +1,7 @@
 Source: libmyperlldap-attribute-perl
 Section: interpreters
 Priority: optional
-Build-Depends: debhelper (>= 3.0.5),  ${perl:Depends}, libmyperlldap-perl (>=1.51)
+Build-Depends: debhelper (>= 3.0.5),  perl (>= 5.6.0-17), libmyperlldap-perl (>=1.80)
 Maintainer: Jan Tomasek <jan@tomasek.cz>
 Standards-Version: 3.5.1
 
