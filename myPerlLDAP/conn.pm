@@ -1,12 +1,12 @@
-package myPerlLDAP::Conn;
+package myPerlLDAP::conn;
 
 use strict;
 
 # TODO: Dont' import all ... mod_perl eff :(
 use Mozilla::OpenLDAP::API 1.4 qw(/.+/);
-use myPerlLDAP::Utils qw(str2Scope normalizeDN);
-use myPerlLDAP::Entry;
-use myPerlLDAP::SearchResults;
+use myPerlLDAP::utils qw(str2Scope normalizeDN);
+use myPerlLDAP::entry;
+use myPerlLDAP::searchResults;
 
 use vars qw($VERSION $_D);
 
@@ -105,7 +105,7 @@ sub init {
 #
 sub newEntry {
 
-  return new myPerlLDAP::Entry;
+  return new myPerlLDAP::entry;
 } # newEntry ----------------------------------------------------------------
 
 #############################################################################
@@ -208,14 +208,14 @@ sub search {
 
   if (ldap_is_ldap_url($filter)) {
     if (! ldap_url_search_s($self->{"ld"}, $filter, $attrsonly, $res)) {
-       return new myPerlLDAP::SearchResults($self->{ld}, $res);
+       return new myPerlLDAP::searchResults($self->{ld}, $res);
     };
   } else {
     if (! ldap_search_s($self->{"ld"}, $basedn, $scope, $filter,
 			defined(\@attrs) ? \@attrs : 0,
 			defined($attrsonly) ? $attrsonly : 0,
 			defined($res) ? $res : 0)) {
-      return new myPerlLDAP::SearchResults($self->{ld}, $res);
+      return new myPerlLDAP::searchResults($self->{ld}, $res);
     };
   };
 
@@ -300,13 +300,13 @@ sub close {
 #
 # With minor changes copied from perLDAP-1.4
 #
-# TODO: This will not work with clases based on myLDAP::Entry or will??
+# TODO: This will not work with clases based on myLDAP::entry or will??
 sub delete {
   my $self = shift;
   my $id = shift;
   my $dn = $id;
 
-  if (ref($id) eq 'myLDAP::Entry') {
+  if (ref($id) eq 'myLDAP::entry') {
     $dn = $id->getDN();
   } else {
     $dn = $self->{"dn"} unless (defined($dn) && ($dn ne ""));
@@ -319,7 +319,7 @@ sub delete {
 }; # delete -----------------------------------------------------------------
 
 #############################################################################
-# Add an object. This fuction expect as argument myPerlLDAP::Entry,
+# Add an object. This fuction expect as argument myPerlLDAP::entry,
 # it will not accept HASH like original function from perlLDAP!
 #
 # Based on perlLDAP, heavy modified for my new Entry ... most of code was
@@ -477,6 +477,6 @@ myPerLDAP::Conn - LDAP server connection object
 
 =head1 SEE ALSO
 
-L<myPerlLDAP::SearchResults>, L<myPerlLDAP::Entry>, L<myPerlLDAP::Attribute>
+L<myPerlLDAP::searchResults>, L<myPerlLDAP::entry>, L<myPerlLDAP::attribute>
 
 =cut
