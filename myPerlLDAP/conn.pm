@@ -1,6 +1,7 @@
 package myPerlLDAP::Conn;
 
 use strict;
+
 # TODO: Dont' import all ... mod_perl eff :(
 use Mozilla::OpenLDAP::API 1.4 qw(/.+/);
 use myPerlLDAP::Utils qw(str2Scope normalizeDN);
@@ -21,6 +22,7 @@ $_D = 1;
 #
 # TODO: For SSL use an betther flag than stupid certdb ... OpenLDAP client
 # isn't now able to work with certs I think.
+
 sub new {
   my ($class, $self) = (shift, {});
 
@@ -421,3 +423,44 @@ sub setDefaultRebindProc {
 # Mandatory TRUE return value.
 #
 1;
+__END__
+
+=head1 NAME
+
+myPerLDAP::Conn - LDAP server connection object
+
+=head1 SYNOPSIS
+
+  use strict;
+  use Mozilla::OpenLDAP::API qw(LDAP_PORT LDAPS_PORT LDAP_SCOPE_SUBTREE);
+  use myPerlLDAP::Conn;
+
+  my $LDAPServerHost = "localhost";
+  my $LDAPServerPort = LDAP_PORT;
+
+  my $conn = new myPerlLDAP::Conn({"host"   => $LDAPServerHost,
+				   "port"   => $LDAPServerPort})
+    or die "Can't connect to $LDAPServerHost:$LDAPServerPort";
+
+  my @attr = ('cn', 'sn', 'givenname');
+  my $res = $conn->search('ou=People,o=test', LDAP_SCOPE_SUBTREE,
+	  		  '(uid=*)', 0, @attr)
+    or do {
+      $conn->printError();
+      die "Can't search"
+    };
+
+
+  my $entry = $res->nextEntry;
+  while ($entry) {
+    print $entry->getLDIF_String;
+    print "\n";
+
+    $entry = $res->nextEntry;
+  };
+
+=head1 SEE ALSO
+
+L<myPerlLDAP::SearchResults>, L<myPerlLDAP::Entry>, L<myPerlLDAP::Attribute>
+
+=cut
