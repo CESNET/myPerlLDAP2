@@ -249,10 +249,11 @@ sub search {
   };
 
   if (ldap_is_ldap_url($filter)) {
-    if (! ldap_url_search_s($self->ld, $filter, $attrsonly, $res)) {
-      my $sRes = new myPerlLDAP::searchResults($self->ld, $res);
-      return $sRes;
-    };
+#    if (! ldap_url_search_s($self->ld, $filter, $attrsonly, $res)) {
+#      my $sRes = new myPerlLDAP::searchResults($self->ld, $res);
+#      return $sRes;
+#    };
+    return undef;
   } else {
     if (! ldap_search_s($self->ld, $basedn, $scope, $filter,
 			defined(\@attrs) ? \@attrs : 0,
@@ -303,26 +304,26 @@ sub read {
 #
 # Without any change copied from perLDAP-1.4
 #
-sub searchURL {
-  my ($self, $url, $attrsonly) = @_;
-  my ($resv, $entry);
-  my ($res) = \$resv;
+#sub searchURL {
+#  my ($self, $url, $attrsonly) = @_;
+#  my ($resv, $entry);
+#  my ($res) = \$resv;
 
-  if (defined($self->ldRes)) {
-    ldap_msgfree($self->ldRes);
-    $self->ldRes(undef);
-  };
+#  if (defined($self->ldRes)) {
+#    ldap_msgfree($self->ldRes);
+#    $self->ldRes(undef);
+#  };
 
-  if (!ldap_url_search_s($self->ld, $url,
-			 defined($attrsonly) ? $attrsonly : 0,
-			 defined($res) ? $res : 0)) {
-    $self->ldRes = $res;
-    $self->{ldfe} = 1;
-    $entry = $self->nextEntry();
-  };
+#  if (!ldap_url_search_s($self->ld, $url,
+#			 defined($attrsonly) ? $attrsonly : 0,
+#			 defined($res) ? $res : 0)) {
+#    $self->ldRes = $res;
+#    $self->{ldfe} = 1;
+#    $entry = $self->nextEntry();
+#  };
 
-  return $entry;
-}; # searchURL -------------------------------------------------------------
+#  return $entry;
+#}; # searchURL -------------------------------------------------------------
 
 #############################################################################
 # Browse an LDAP entry, very much like the regular search, except we set
