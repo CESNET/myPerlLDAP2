@@ -233,7 +233,7 @@ sub printErrorMessage {
 #
 sub search {
   my ($self, $basedn, $scope, $filter, $attrsonly, @attrs) = @_;
-  my ($resv, $entry);
+  my ($resv);
   my ($res) = \$resv;
 
   $scope = str2Scope($scope);
@@ -258,10 +258,14 @@ sub search {
       my $sRes = new myPerlLDAP::searchResult($self->ld, $res);
       $sRes->owner($self);
       return $sRes;
+    } else {
+      # Error code "is" in $self->ld
+      return ;
     };
   };
 
-  return $entry;
+  # Nejak spatne zavolana funkce $sefl->error vrati ???
+  return ;
 } # search ------------------------------------------------------------------
 
 #############################################################################
