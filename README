@@ -1,0 +1,20 @@
+
+		      myPerlLDAP by Jan Tomasek <jan@tomasek.cz>
+
+	this module was developed for my project on which working for CESNET
+
+			 	 vist us at 
+                       http://www.cesnet.cz/english/ 
+
+
+myPerlLDAP is set of classes for work with LDAP databases. Main diference
+to other modules like Net::LDAP, Mozilla::perlLDAP and Mozilla::perlOpenLDAP
+is that strictly OO you can work with it only trought set of classes.
+
+It depends on Mozilla::perlOpenLDAP, it is using some pieces of code from
+Mozilla:perlLDAP fror more info look at LEGAL file.
+
+Instalation
+~~~~~~~~~~~
+cd <expanded module directory>
+rm -r myPerlLDAP/Attribute/.auto
