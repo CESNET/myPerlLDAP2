@@ -1,3 +1,9 @@
+libmyperlldap-perl (1.61-1) unstable; urgency=low
+
+  Fixed quoting for XML in myPerlLDAP::attribute::XML()
+
+ -- Jan Tomasek <jan@tomasek.cz>  Mon, 24 Jul 2002 15:27:00 +0200
+
 libmyperlldap-perl (1.60-1) unstable; urgency=low
 
   Fixed bug in SSL mode. 
