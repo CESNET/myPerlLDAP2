@@ -16,6 +16,18 @@ $VERSION = "0.0.1";
 # 10 ... excution of some methods
 $_D = 1;
 
+=head1 NAME
+
+Attribute
+
+=head1 DESCRIPTION
+
+=item new
+
+bla bla
+
+=cut
+
 sub new {
   my $proto = shift;
   my $class = ref($proto) || $proto;
@@ -41,6 +53,14 @@ sub new {
 
   return $self;
 };
+
+=item init
+
+bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla 
+
+bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla 
+
+=cut
 
 sub init {
   my $self = shift;
