@@ -49,9 +49,9 @@ $TestBase       = 'ou=People,dc=cesnet,o=test';
 $BindDN         = 'uid=testmich,ou=People,dc=cesnet,o=test';
 $BindPasswd     = 'test123456';
 
-#$LDAPServerHost = 'localhost';
-#$TestBase       = 'ou=People,o=test';
-#$BindDN         = 'cn=Manager, o=test';
-#$BindPasswd     = 'test_secret';
+$LDAPServerHost = 'localhost';
+$TestBase       = 'ou=People,o=test';
+$BindDN         = 'cn=Manager, o=test';
+$BindPasswd     = 'test_secret';
 
 1;
