@@ -1,4 +1,9 @@
 2004-03-15  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.81
+	* myPerlLDAP/myPerlLDAP-buildClasses.pl:
+	Updated for Sun ONE Directory Server 5.2
+
+2004-03-15  Jan Tomasek  <jan@tomasek.cz>
 	* Version: 1.80
 	* myPerlLDAP/aci.pm, myPerlLDAP/conn.pm, myPerlLDAP/entry.pm, myPerlLDAP/searchResult.pm, t/10-search.t, t/11-aci.t, t/C.pm:
 	Support for LDAP ACI
