@@ -3,14 +3,14 @@
 use lib qw(..);
 
 use strict;
-use myPerlLDAP::Conn;
-use myPerlLDAP::Attribute;
+use myPerlLDAP::conn;
+use myPerlLDAP::attribute;
 use Mozilla::OpenLDAP::API qw(LDAP_PORT LDAP_SCOPE_BASE);
 
 use vars qw($VERSION);
-$VERSION = "0.2.2";
+$VERSION = "0.5.0";
 
-$myPerlLDAP::Attribute::_D=0;
+$myPerlLDAP::attribute::_D=0;
 
 my %tree; # This is global variable =?> Am I dirty programmer? :))
 
@@ -35,45 +35,45 @@ my $match_SIGNLEV   = qw /SINGLE-VALUE/;
 my $match_READONLY  = qw /NO-USER-MODIFICATION/;
 
 my $superclasses = {
-		    '1.3.6.1.4.1.1466.115.121.1.3'   => '_AttributeTypeDescription',
-		    '1.3.6.1.4.1.1466.115.121.1.4'   => '_Audio',
-		    '1.3.6.1.4.1.1466.115.121.1.5'   => '_Binary',
-		    '1.3.6.1.4.1.1466.115.121.1.6'   => '_BinString',
-		    '1.3.6.1.4.1.1466.115.121.1.8'   => '_Certificate',
-		    '1.3.6.1.4.1.1466.115.121.1.9'   => '_CertificateList',
-		    '1.3.6.1.4.1.1466.115.121.1.10'  => '_CertificatePair',
+		    '1.3.6.1.4.1.1466.115.121.1.3'   => '_attributeTypeDescription',
+		    '1.3.6.1.4.1.1466.115.121.1.4'   => '_audio',
+		    '1.3.6.1.4.1.1466.115.121.1.5'   => '_binary',
+		    '1.3.6.1.4.1.1466.115.121.1.6'   => '_binString',
+		    '1.3.6.1.4.1.1466.115.121.1.8'   => '_certificate',
+		    '1.3.6.1.4.1.1466.115.121.1.9'   => '_certificateList',
+		    '1.3.6.1.4.1.1466.115.121.1.10'  => '_certificatePair',
 		    '1.3.6.1.4.1.1466.115.121.1.12'  => '_DN',
-		    '1.3.6.1.4.1.1466.115.121.1.13'  => '_DataQualitySyntax',
-		    '1.3.6.1.4.1.1466.115.121.1.14'  => '_DeliveryMethod',
-		    '1.3.6.1.4.1.1466.115.121.1.15'  => '_DirectoryString',
+		    '1.3.6.1.4.1.1466.115.121.1.13'  => '_dataQualitySyntax',
+		    '1.3.6.1.4.1.1466.115.121.1.14'  => '_deliveryMethod',
+		    '1.3.6.1.4.1.1466.115.121.1.15'  => '_directoryString',
 		    '1.3.6.1.4.1.1466.115.121.1.16'  => '_DITContentRuleDescription',
 		    '1.3.6.1.4.1.1466.115.121.1.17'  => '_DITStructureRuleDescription',
 		    '1.3.6.1.4.1.1466.115.121.1.19'  => '_DSAQualitySyntax',
-		    '1.3.6.1.4.1.1466.115.121.1.21'  => '_EnhancedGuide',
-		    '1.3.6.1.4.1.1466.115.121.1.22'  => '_FacsimileTelephoneNumber',
-		    '1.3.6.1.4.1.1466.115.121.1.23'  => '_Fax',
-		    '1.3.6.1.4.1.1466.115.121.1.24'  => '_GeneralizedTime',
-		    '1.3.6.1.4.1.1466.115.121.1.25'  => '_Guide',
+		    '1.3.6.1.4.1.1466.115.121.1.21'  => '_enhancedGuide',
+		    '1.3.6.1.4.1.1466.115.121.1.22'  => '_facsimileTelephoneNumber',
+		    '1.3.6.1.4.1.1466.115.121.1.23'  => '_fax',
+		    '1.3.6.1.4.1.1466.115.121.1.24'  => '_generalizedTime',
+		    '1.3.6.1.4.1.1466.115.121.1.25'  => '_guide',
 		    '1.3.6.1.4.1.1466.115.121.1.26'  => '_IA5String',
-		    '1.3.6.1.4.1.1466.115.121.1.27'  => '_Integer',
+		    '1.3.6.1.4.1.1466.115.121.1.27'  => '_integer',
 		    '1.3.6.1.4.1.1466.115.121.1.28'  => '_JPEG',
-		    '1.3.6.1.4.1.1466.115.121.1.30'  => '_MatchingRuleDescription',
-		    '1.3.6.1.4.1.1466.115.121.1.31'  => '_MatchingRuleUseDescription',
-		    '1.3.6.1.4.1.1466.115.121.1.34'  => '_NameAndOptionalUID',
-		    '1.3.6.1.4.1.1466.115.121.1.35'  => '_NameFormDescription',
-		    '1.3.6.1.4.1.1466.115.121.1.36'  => '_NumericString',
-		    '1.3.6.1.4.1.1466.115.121.1.37'  => '_ObjectClassDescription',
+		    '1.3.6.1.4.1.1466.115.121.1.30'  => '_matchingRuleDescription',
+		    '1.3.6.1.4.1.1466.115.121.1.31'  => '_matchingRuleUseDescription',
+		    '1.3.6.1.4.1.1466.115.121.1.34'  => '_nameAndOptionalUID',
+		    '1.3.6.1.4.1.1466.115.121.1.35'  => '_nameFormDescription',
+		    '1.3.6.1.4.1.1466.115.121.1.36'  => '_numericString',
+		    '1.3.6.1.4.1.1466.115.121.1.37'  => '_objectClassDescription',
 		    '1.3.6.1.4.1.1466.115.121.1.38'  => '_OID',
-		    '1.3.6.1.4.1.1466.115.121.1.39'  => '_OtherMailbox',
-		    '1.3.6.1.4.1.1466.115.121.1.40'  => '_OctetString',
-		    '1.3.6.1.4.1.1466.115.121.1.41'  => '_PostalAddress',
-		    '1.3.6.1.4.1.1466.115.121.1.42'  => '_ProtocolInformation',
-		    '1.3.6.1.4.1.1466.115.121.1.43'  => '_PresentationAddress',
-		    '1.3.6.1.4.1.1466.115.121.1.44'  => '_ProtocolInformation',
-		    '1.3.6.1.4.1.1466.115.121.1.49'  => '_SupportedAlgorithm',
-		    '1.3.6.1.4.1.1466.115.121.1.50'  => '_TelephoneNumber',
-		    '1.3.6.1.4.1.1466.115.121.1.51'  => '_TeletexTerminalIdentifier',
-		    '1.3.6.1.4.1.1466.115.121.1.52'  => '_TeletexNumber',
+		    '1.3.6.1.4.1.1466.115.121.1.39'  => '_otherMailbox',
+		    '1.3.6.1.4.1.1466.115.121.1.40'  => '_octetString',
+		    '1.3.6.1.4.1.1466.115.121.1.41'  => '_postalAddress',
+		    '1.3.6.1.4.1.1466.115.121.1.42'  => '_protocolInformation',
+		    '1.3.6.1.4.1.1466.115.121.1.43'  => '_presentationAddress',
+		    '1.3.6.1.4.1.1466.115.121.1.44'  => '_protocolInformation',
+		    '1.3.6.1.4.1.1466.115.121.1.49'  => '_supportedAlgorithm',
+		    '1.3.6.1.4.1.1466.115.121.1.50'  => '_telephoneNumber',
+		    '1.3.6.1.4.1.1466.115.121.1.51'  => '_teletexTerminalIdentifier',
+		    '1.3.6.1.4.1.1466.115.121.1.52'  => '_teletexNumber',
 		    '1.3.6.1.4.1.1466.115.121.1.53'  => '_UTCTime',
 		    '1.3.6.1.4.1.1466.115.121.1.54'  => '_LDAPSyntaxDescription',
 		   };
@@ -207,9 +207,9 @@ sub attributeHash2Class {
   };
 
   if (defined($syntax)) {
-    $superclass="myPerlLDAP::Attribute::$superclasses->{$syntax}";
+    $superclass="myPerlLDAP::attribute::$superclasses->{$syntax}";
   } elsif ((!defined($syntax)) or ()) {
-    $superclass="myPerlLDAP::Attribute::$attr->{sup}";
+    $superclass="myPerlLDAP::attribute::$attr->{sup}";
   } else {
     warn "This should never happen. Coding error! Please report conditions.";
     return 0;
@@ -220,30 +220,44 @@ sub attributeHash2Class {
     $name = lc $name;
     my $init_code = "";
 
-    my (@k, @v);
-    do { push @k, "'OID'";
-	 push @v, "'$attr->{oid}'"} if (defined($attr->{'oid'}));
-    do { push @k, "'EQUALITY'";
-	 push @v, "'$attr->{equality}'"} if (defined($attr->{'equality'}));
-    do { push @k, "'SYNTAX'";
-	 push @v, "'$syntax'"} if (defined($syntax));
-    do { push @k, "'DESC'";
-	 push @v, "'$attr->{desc}'"} if (defined($attr->{'desc'}));
-    do { push @k, "'SUBSTR'";
-	 push @v, "'$attr->{substr}'"} if (defined($attr->{'substr'}));
-    do { push @k, "'ORDERING'";
-	 push @v, "'$attr->{ordering}'"} if (defined($attr->{'ordering'}));
-    do { push @k, "'USAGE'";
-	 push @v, "'$attr->{usage}'"} if (defined($attr->{'usage'}));
-    do { push @k, "'LENGTH'";
-	 push @v, "'$length'"} if (defined($length));
-    do { push @k, "'SINGLEVALUE'";
-	 push @v, "'1'"} if (defined($attr->{'singleValue'}));
-    do { push @k, "'READONLY'";
-	 push @v, "'1'"} if (defined($attr->{'readOnly'}));
-    $init_code = '  @{$self}{'.join(",\n           ", @k)."} 
-    =
-          (".join(",\n           ", @v).");";
+#    my (@k, @v);
+#    do { push @k, "'OID'";
+#	 push @v, "'$attr->{oid}'"} if (defined($attr->{'oid'}));
+#    do { push @k, "'EQUALITY'";
+#	 push @v, "'$attr->{equality}'"} if (defined($attr->{'equality'}));
+#    do { push @k, "'SYNTAX'";
+#	 push @v, "'$syntax'"} if (defined($syntax));
+#    do { push @k, "'DESC'";
+#	 push @v, "'$attr->{desc}'"} if (defined($attr->{'desc'}));
+#    do { push @k, "'SUBSTR'";
+#	 push @v, "'$attr->{substr}'"} if (defined($attr->{'substr'}));
+#    do { push @k, "'ORDERING'";
+#	 push @v, "'$attr->{ordering}'"} if (defined($attr->{'ordering'}));
+#    do { push @k, "'USAGE'";
+#	 push @v, "'$attr->{usage}'"} if (defined($attr->{'usage'}));
+#    do { push @k, "'LENGTH'";
+#	 push @v, "'$length'"} if (defined($length));
+#    do { push @k, "'SINGLEVALUE'";
+#	 push @v, "'1'"} if (defined($attr->{'singleValue'}));
+#    do { push @k, "'READONLY'";
+#	 push @v, "'1'"} if (defined($attr->{'readOnly'}));
+#    $init_code = '  @{$self}{'.join(",\n           ", @k)."} 
+#    =
+#          (".join(",\n           ", @v).");";
+
+    my @f;
+    push @f, "OID => '".$attr->{oid}."'" if (defined($attr->{'oid'}));
+    push @f, "equality => '".$attr->{equality}."'" if (defined($attr->{'equality'}));
+    push @f, "syntax => '$syntax'" if (defined($syntax));
+    push @f, "description => '".$attr->{desc}."'" if (defined($attr->{'desc'}));
+    push @f, "subStr => '".$attr->{substr}."'" if (defined($attr->{'substr'}));
+    push @f, "ordering => '".$attr->{ordering}."'" if (defined($attr->{'ordering'}));
+    push @f, "usage => '".$attr->{usage}."'" if (defined($attr->{'usage'}));
+    push @f, "length => $length" if (defined($length));
+    push @f, "singleValue => 1" if (defined($attr->{'singleValue'}));
+    push @f, "readOnly => 1" if (defined($attr->{'readOnly'}));
+
+    my $fields = "\%fields = (".join(",\n           ", @f).");";
 
     $classDefiniton = "# $attr->{origAttr}";
     $classHash = "# ".join("\n# ", split(/\n/, printAttributeHash($attr)));
@@ -253,7 +267,8 @@ sub attributeHash2Class {
     print CLASS <<EOF
 #!/usr/bin/perl -w
 
-# This class was automaticaly created by buildClasses.pl, from definiton:
+# This class was automaticaly created by myPerlLDAP-buildClasses.pl, 
+# from definiton:
 #
 $classDefiniton
 #
@@ -262,25 +277,34 @@ $classDefiniton
 $classHash
 #
 # buildClasses.pl is part of the myPerlLDAP package developed 
-# at CESNET (http://www.cesnet.cz/) by Jan Tomasek <jan\@tomasek.cz>.
+# at CESNET (http://www.cesnet.cz/) by Jan Tomasek <jan(at)tomasek.cz>.
 
-package myPerlLDAP::Attribute::$name;
+package myPerlLDAP::attribute::$name;
 
 use strict;
 use $superclass;
-use vars qw(\$VERSION \@ISA);
+use vars qw(\$VERSION \@ISA \%fields);
 
-\$VERSION = "$VERSION";
+\$VERSION = '$VERSION';
 
 \@ISA = ('$superclass');
 
-sub init {
-  my \$self = shift;
+$fields
 
-  \$self->SUPER::init();
+sub new {
+  my \$proto = shift;
+  my \$class = ref(\$proto) || \$proto;
+  my \$self = bless \$class->SUPER::new(), \$class;
 
-$init_code
+  foreach my \$element (keys \%fields) {
+    \$self->{_permitted_fields}->{\$element} = \$fields{\$element};
+  };
+  \@{\$self}{keys \%fields} = values \%fields;
+
+  return \$self;
 };
+
+
 EOF
 ;
    close(CLASS);
@@ -354,7 +378,7 @@ $attrClassesPath = readAnswer("Where do you want to write clases", $attrClassesP
 mkdir("$attrClassesPath");
 mkdir("$attrClassesPath/Attribute");
 
-my $conn = new myPerlLDAP::Conn({"host"   => $LDAPServerHost,
+my $conn = new myPerlLDAP::conn({"host"   => $LDAPServerHost,
 				 "port"   => $LDAPServerPort})
   or die "Can't connect to the LDAP server ($LDAPServerHost:$LDAPServerPort)";
 
@@ -413,7 +437,7 @@ $tree{'Attribute'}=\@array;
 open(TREE, ">$attrClassesPath/ClassTree.pod");
 print TREE "="."head1 NAME
 
-myPerlLDAP::Attribute inheritance diagram
+myPerlLDAP::attribute inheritance diagram
 
 ="."head1 DESCRIPTION\n\n";
 
@@ -428,7 +452,7 @@ print MAKEFILEPL "#!/usr/bin/perl -w
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
-    'NAME'          => 'myPerlLDAP::Attribute',
+    'NAME'          => 'myPerlLDAP::attribute',
     'VERSION'       => '$VERSION',
     'AUTHOR'        => 'Jan Tomasek <jan\@tomasek.cz>',
     'DISTNAME'      => 'myPerlLDAP-auto-attributes',
