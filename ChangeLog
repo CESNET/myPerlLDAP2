@@ -1,3 +1,12 @@
+2004-05-19  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.83
+	* t/20-add.t, t/30-update.t, t/C.pm: New tests for new functions.
+	* myPerlLDAP/entry.pm: Updated for incremental attribute values update.
+	* myPerlLDAP/conn.pm: Debug output when entry update fails.
+	* myPerlLDAP/attribute.pm:
+	Updates for incremental changes of attribute values. Older versions
+	were always rewriting complete entry value.
+
 2004-03-24  Jan Tomasek  <jan@tomasek.cz>
 	* Version: 1.82
 	* myPerlLDAP/conn.pm: Updated anonymous ACL handler
