@@ -32,6 +32,7 @@ sub new {
 
   bless($self, $class);
 
+  $self->{NAME} = $requestedClass;
   $self->init();
 
   if (($_D >= 10) || ($self->{_D} >= 10)) {
@@ -386,8 +387,13 @@ sub isReadOnly {
   return $self->{READONLY};
 };
 
-#TODO: Tohle MUSI byt promena a nesmi se to odvozovat ...
 sub name {
+  my $self = shift;
+
+  return $self->{NAME};
+};
+
+sub className {
   my $self = shift;
 
   my $name = ref($self);

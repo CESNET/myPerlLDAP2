@@ -3,7 +3,8 @@
 use lib qw(. ..);
 
 use strict;
-use Mozilla::OpenLDAP::Conn;
+use myPerlLDAP::Conn;
+#use Mozilla::OpenLDAP::Conn;
 use Mozilla::OpenLDAP::API qw(LDAP_PORT LDAPS_PORT LDAP_SCOPE_BASE);
 
 use vars qw($VERSION);
@@ -310,27 +311,27 @@ sub compareAttributeHash {
 #my $LDAPServerHost = "nms.ctt.cz";
 my $LDAPServerHost = "localhost";
 my $LDAPServerPort = LDAP_PORT;
-
-my $conn = new Mozilla::OpenLDAP::Conn({"host"   => $LDAPServerHost,
-					"port"   => $LDAPServerPort,
-					"certdb" => 1} )
+my $conn = new myPerlLDAP::Conn({"host"   => $LDAPServerHost,
+				 "port"   => $LDAPServerPort,
+				 "certdb" => 1} )
   or die "Can't connect to the LDAP server ($LDAPServerHost:$LDAPServerPort)";
 
 # Findout where schema is stored
-my $entry = $conn->search(' ',
-			  LDAP_SCOPE_BASE,
-			  '(objectClass=*)',
-			  0,
-			  ('subSchemaSubEntry'))
+my $sres = $conn->search(' ',
+			 LDAP_SCOPE_BASE,
+			 '(objectClass=*)',
+			 0,
+			 ('subSchemaSubEntry'))
   or die "Can't locate place where schema is stored";
+my $entry = $sres->nextEntry();
+my $subSchemaSubEntry  = ${$entry->attr('subSchemaSubEntry')->get()}[0];
 
-my $subSchemaSubEntry  = $entry->{'subSchemaSubEntry'}[0];
-
-$entry = $conn->search($subSchemaSubEntry,
-		       LDAP_SCOPE_BASE,
-		       '(objectclass=*)',
-		       0,
-		       ("attributeTypes", "ldapSyntaxes"))
+# Get schema
+$sres = $conn->search($subSchemaSubEntry,
+		      LDAP_SCOPE_BASE,
+		      '(objectclass=*)',
+		      0,
+		      ("attributeTypes", "ldapSyntaxes"))
   or die "Can't read schema";
 
 # clean old classes, prepare place for new
@@ -343,8 +344,9 @@ unlink map { "$attrClassesPath/$_" } @files;
 chdir($attrClassesPath) or die "Can't chdir to $attrClassesPath: $!";
 
 my ($attr, $syn, $a, %attrList);
+$entry = $sres->nextEntry();
 while ($entry) {
-  foreach $attr (@{$entry->{'attributetypes'}}) {
+  foreach $attr (@{$entry->attr('attributetypes')->get}) {
     $a = parseAttributeType($attr);
 
     # Add this attribute to atribute hash
@@ -367,7 +369,7 @@ while ($entry) {
   #  print "$syn\n";
   #};
 
-  $entry = $conn->nextEntry();
+  $entry = $sres->nextEntry();
 };
 
 my $oid;
