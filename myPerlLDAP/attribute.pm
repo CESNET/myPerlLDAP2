@@ -185,10 +185,12 @@ sub add {
 
   if (($self->singleValue) and (scalar @values)) {
     # This attribute is only single value so we take only first
-    if (((scalar @$values) > 1) and ($_D || $self->debug)) {
+    if (((scalar @$values) > 2) and ($_D || $self->debug)) {
       carp("more than one value passed to singe-value attribute $self");
     };
-    @values = splice(@values, 2);
+    # @values = splice(@values, 2);
+    my $val = $values[0];
+    @values = ($val);
   };
 
   push @{$self->{VALUES}}, (@values);
