@@ -20,7 +20,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # #############################################################################
 
-BEGIN { $| = 1; print "1..8\n";}
+BEGIN { $| = 1; print "1..12\n";}
 #END {print "not ok 1\n" unless $SOK;}
 
 use lib qw(/home/honza/proj/myPerlLDAP);
@@ -29,6 +29,7 @@ use perlOpenLDAP::API qw(LDAP_PORT LDAPS_PORT LDAP_SCOPE_SUBTREE);
 use myPerlLDAP::conn;
 use myPerlLDAP::entry;
 use myPerlLDAP::attribute;
+use Data::Dumper;
 use t::C;
 use vars qw($SOK);
 $SOK = 1;
@@ -68,9 +69,10 @@ if ($entry->isModified) {
 
 # - 6 -----------------------------------------------------------------------
 $entry->addValues('description', 'Popiska');
-$entry->removeAttr('givenName');
+#$entry->removeAttr('givenName');
 $entry->removeAttr('mail');
 $entry->addValues('givenName', 'Trotl');
+$entry->addValues('givenName', 'Trotlik');
 $entry->addValues('cn', 'BFU');
 
 if ($entry->isModified) {
@@ -85,8 +87,40 @@ $conn->update($entry) or $SOK = 0;
 print "not ok 7\n" unless $SOK;
 print "ok 7\n" if $SOK;
 
+
 # - 8 -----------------------------------------------------------------------
+if ($entry->isModified) {
+  print "not ok 8\n";
+} else {
+  print "ok 8\n";
+};
+
+# - 9 -----------------------------------------------------------------------
+$entry->addValues('cn', 'BFU2');
+$entry->removeValues('givenName', 'Test2');
+$entry->addValues('givenName', 'Test-Q');
+$entry->addValues('givenName', 'Test-Z');
+if ($entry->isModified) {
+  print "ok 9\n";
+} else {
+  print "not ok 9\n";
+};
+
+# - 10 ----------------------------------------------------------------------
+$SOK = 1;
+$conn->update($entry) or $SOK = 0;
+print "not ok 10\n" unless $SOK;
+print "ok 10\n" if $SOK;
+
+# - 11 ----------------------------------------------------------------------
+if ($entry->isModified) {
+  print "not ok 11\n";
+} else {
+  print "ok 11\n";
+};
+
+# - 12 ----------------------------------------------------------------------
 $SOK = 1;
 $conn->close or $SOK = 0;
-print "not ok 8\n" unless $SOK;
-print "ok 8\n" if $SOK;
+print "not ok 12\n" unless $SOK;
+print "ok 12\n" if $SOK;
