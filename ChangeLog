@@ -1,3 +1,11 @@
+2004-10-25  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.87
+	* myPerlLDAP/searchResult.pm: Pridany funkce cacheLocaly a removeLocaly
+	* myPerlLDAP/entry.pm: Doplneno posilani navratoveho kodu.
+	* myPerlLDAP/attribute.pm: Jeden zapomenutej warn co zbytecne prudil...
+	* t/11-aci.t, t/50-sort.t: Opravil jsem nejaky drobny chybicky.
+	* t/55-removeResult.t: Novej test pro novou ficuru :)
+
 2004-07-28  Jan Tomasek  <jan@tomasek.cz>
 	* Version: 1.86
 	* myPerlLDAP/attribute.pm: MatchValues is now case insensitive. This
