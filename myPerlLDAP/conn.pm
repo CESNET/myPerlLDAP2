@@ -43,13 +43,16 @@ use myPerlLDAP::utils qw(str2Scope normalizeDN);
 use myPerlLDAP::entry;
 use myPerlLDAP::searchResult;
 use myPerlLDAP::aci;
+use Sys::Syslog;
 use Data::Dumper;
 
-use vars qw($VERSION @ISA %fields);
+use vars qw($SYSLOG $VERSION @ISA %fields);
 
 @ISA = ("myPerlLDAP::abstract");
 
-$VERSION = "1.70";
+$VERSION = "1.90";
+
+$SYSLOG = 0;
 
 %fields = (
 	   debug => 1,
@@ -471,6 +474,8 @@ sub delete {
   $dn = normalizeDN($dn);
   my $ret = ldap_delete_s($self->ld, $dn) if ($dn ne "");
 
+  _syslog("DEL($ret)", $self->bindDN, $dn) if ($SYSLOG);
+
   return (($ret == LDAP_SUCCESS) ? 1 : undef);
 }; # delete -----------------------------------------------------------------
 
@@ -488,6 +493,8 @@ sub add {
 
   my $rec = $entry->makeAddRecord;
   my $ret = ldap_add_s($self->ld, $entry->dn, $rec);
+
+  $self->_modRecord2syslog("ADD($ret)", $entry, secureModRecord($rec));
 
   if ($ret == LDAP_SUCCESS) {
     $entry->clearModifiedFlags;
@@ -529,12 +536,9 @@ sub modifyRDN {
 sub secureModRecord {
   my $rec = shift;
 
-  $rec->{userpassword} = ['values removed from debug for security reasons']
-    if (defined($rec->{userpassword}));
-  $rec->{tacuserpassword} = ['values removed from debug for security reasons']
-    if (defined($rec->{tacuserpassword}));
-  $rec->{radiuspassword} = ['values removed from debug for security reasons']
-    if (defined($rec->{radiuspassword}));
+  $rec->{userpassword} = { x => ['values removed from debug for security reasons']} if (defined($rec->{userpassword}));
+  $rec->{tacuserpassword} = { x => ['values removed from debug for security reasons']} if (defined($rec->{tacuserpassword}));
+  $rec->{radiuspassword} = { x => ['values removed from debug for security reasons'] } if (defined($rec->{radiuspassword}));
 
   return $rec;
 };
@@ -548,11 +552,48 @@ sub secureModRecord {
 #    "Nerver let user or other class using your class touch it's
 #     internal structures."
 #
+
+sub _syslog {
+  sub escape {
+    my $line = shift;
+
+    $line =~ s,\:,\/\:,g;
+
+    return $line;
+  };
+
+  openlog('caas', 'cons,pid', 'local8');
+  syslog('info', join(":", map {escape($_)} @_));
+  closelog();
+};
+
+sub _modRecord2syslog {
+  my $self = shift;
+  my $id = shift;
+  my $entry = shift;
+  my $rec = shift;
+
+  foreach my $attr (sort keys %{$rec}) {
+    foreach my $mode (sort keys %{$rec->{$attr}}) {
+      my $counter=0;
+      foreach my $value (@{$rec->{$attr}->{$mode}}) {
+	_syslog($id, $self->bindDN, $entry->dn, $attr, $mode, $value)
+	  if ($SYSLOG);
+	$counter++;
+      };
+      _syslog($id, $self->bindDN, $entry->dn, $attr, $mode)
+	if (($counter==0) and ($SYSLOG>1));
+    };
+  };
+};
+
 sub update {
   my ($self, $entry) = @_;
 
   my $rec = $entry->makeModificationRecord;
   my $ret = ldap_modify_s($self->ld, $entry->dn, $rec);
+
+  $self->_modRecord2syslog("MOD($ret)", $entry, secureModRecord($rec));
 
   if ($ret == LDAP_SUCCESS) {
     $entry->clearModifiedFlags;
@@ -601,6 +642,9 @@ sub simpleAuth {
   my ($ret);
 
   $ret = ldap_simple_bind_s($self->ld, $dn, $pswd);
+
+  $self->bindDN($dn);
+  $self->bindPasswd($pswd);
 
   $self->{aciCTRLSuported} = undef;
   if (($ret == LDAP_SUCCESS) and (defined($pswd))) {
