@@ -7,7 +7,7 @@ use Mozilla::OpenLDAP::Conn;
 use Mozilla::OpenLDAP::API qw(LDAP_PORT LDAPS_PORT LDAP_SCOPE_BASE);
 
 use vars qw($VERSION);
-$VERSION = "0.0.1";
+$VERSION = "0.2.0";
 
 my $match_OID       = qw /^(\S+)\s+NAME/;
 my $match_NAME      = qw /NAME\s+\'([\w\-]+)\'/;
@@ -228,13 +228,14 @@ sub attributeHash2Class {
     do { push @k, "'USAGE'";
 	 push @v, "'$attr->{usage}'"} if (defined($attr->{'usage'}));
     do { push @k, "'LENGTH'";
-	 push @v, $length} if (defined($length));
+	 push @v, "'$length'"} if (defined($length));
     do { push @k, "'SINGLEVALUE'";
-	 push @v, 1} if (defined($attr->{'singleValue'}));
+	 push @v, "'1'"} if (defined($attr->{'singleValue'}));
     do { push @k, "'READONLY'";
-	 push @v, 1} if (defined($attr->{'readOnly'}));
-    $init_code = '  @{$self}{'.join(",\n           ", @k)."} =
-    {".join(",\n     ", @v)."};\n";
+	 push @v, "'1'"} if (defined($attr->{'readOnly'}));
+    $init_code = '  @{$self}{'.join(",\n           ", @k)."} 
+    =
+          (".join(",\n           ", @v).");";
 
     $classDefiniton = "# $attr->{origAttr}";
     $classHash = "# ".join("\n# ", split(/\n/, printAttributeHash($attr)));
