@@ -1,13 +1,13 @@
-package myPerlLDAP::Attribute::_JPEG;
+package myPerlLDAP::attribute::_JPEG;
 
 use strict;
-use myPerlLDAP::Attribute;
+use myPerlLDAP::attribute;
 
 use vars qw($VERSION @ISA);
 
 
-$VERSION = "0.0.1";
+$VERSION = "0.5.0";
 
-@ISA = ("myPerlLDAP::Attribute");
+@ISA = ("myPerlLDAP::attribute");
 
 1;
