@@ -1,0 +1,15 @@
+libmyperlldap-attribute-perl (1.51-1) unstable; urgency=low
+
+  * I finaly made this part of myPerlLDAP package.
+
+ -- Jan Tomasek <jan@tomasek.cz>  Mon, 24 Jun 2002 10:54:00 +0200
+
+libmyperlldap-attribute-perl (1.00-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- root <root@caas.cesnet.cz>  Fri,  3 May 2002 10:54:39 +0200
+
+Local variables:
+mode: debian-changelog
+End:
