@@ -250,7 +250,7 @@ sub search {
 			defined(\@attrs) ? \@attrs : 0,
 			defined($attrsonly) ? $attrsonly : 0,
 			defined($res) ? $res : 0)) {
-      my $sRes = new myPerlLDAP::searchResults($self->{ld}, $res);
+      my $sRes = new myPerlLDAP::searchResult($self->{ld}, $res);
       $sRes->owner($self);
       return $sRes;
     };
@@ -514,6 +514,6 @@ myPerLDAP::Conn - LDAP server connection object
 
 =head1 SEE ALSO
 
-L<myPerlLDAP::searchResults>, L<myPerlLDAP::entry>, L<myPerlLDAP::attribute>
+L<myPerlLDAP::searchResult>, L<myPerlLDAP::entry>, L<myPerlLDAP::attribute>
 
 =cut
