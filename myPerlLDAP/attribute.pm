@@ -422,4 +422,26 @@ sub className {
   return $name;
 };
 
+sub getXML {
+  my $self = shift;
+  my @ret;
+  my $value;
+
+  if ($self->name eq 'objectclass') {
+    push @ret, '<dsml:objectclass>';
+    foreach $value (@{$self->get()}) {
+      push @ret, "  <dsml:oc-value>$value</dsml:oc-value>";
+    };
+    push @ret, '</dsml:objectclass>';
+  } else {
+    push @ret, "<dsml:attr name=\"".$self->name."\">";
+    foreach $value (@{$self->get()}) {
+      push @ret, "  <dsml:value>$value</dsml:value>";
+    };
+    push @ret, "</dsml:attr name=\"".$self->name."\">";
+  };
+
+  return \@ret;
+};
+
 1;
