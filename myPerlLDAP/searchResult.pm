@@ -27,6 +27,7 @@ use perlOpenLDAP::API 1.4 qw(ldap_first_entry ldap_next_entry ldap_msgfree
 			     ldap_next_attribute ldap_get_values_len
 			     ldap_ber_free ldap_count_entries);
 use myPerlLDAP::attribute;
+use myPerlLDAP::aci;
 use strict;
 use Data::Dumper;
 use Carp;
@@ -149,22 +150,28 @@ sub nextEntry {
     $entry->clearModifiedFlags;
     return $entry unless $attr;
 
-    $lcattr = lc $attr;
-    @vals = ldap_get_values_len($self->{"ld"}, $self->{"ldentry"}, $attr);
-    $self->addValues2Entry($entry, $lcattr, \@vals);
-
+    my %aclRights;
     $count = 1;
-    while ($attr = ldap_next_attribute($self->{"ld"},
-				     $self->{"ldentry"}, $ber)) {
+    while ($attr) {
       $lcattr = lc $attr;
-      @vals = ldap_get_values_len($self->{"ld"}, $self->{"ldentry"}, $attr);
+      my @vals = ldap_get_values_len($self->{"ld"}, $self->{"ldentry"}, $attr);
+      if ($lcattr =~ /^aclrights/) {
+	$aclRights{$lcattr} = \@vals;
+      } else {
+	$self->addValues2Entry($entry, $lcattr, \@vals);
+      };
 
-      $self->addValues2Entry($entry, $lcattr, \@vals);
-
+      $attr = ldap_next_attribute($self->{"ld"},
+				  $self->{"ldentry"}, $ber);
       $count++;
     };
-
     ldap_ber_free($ber, 0) if $ber;
+
+    if (%aclRights) {
+      my $aci = new myPerlLDAP::aci;
+      $aci->initFromHash(\%aclRights);
+      $entry->aci($aci);
+    };
 
     $entry->clearModifiedFlags;
     return $entry;

@@ -37,11 +37,12 @@ package myPerlLDAP::conn;
 use strict;
 
 # TODO: Dont' import all ... mod_perl eff :(
-use perlOpenLDAP::API 1.4 qw(/.+/);
+use perlOpenLDAP::API 1.5 qw(/.+/);
 use myPerlLDAP::abstract;
 use myPerlLDAP::utils qw(str2Scope normalizeDN);
 use myPerlLDAP::entry;
 use myPerlLDAP::searchResult;
+use myPerlLDAP::aci;
 use Data::Dumper;
 
 use vars qw($VERSION @ISA %fields);
@@ -60,6 +61,8 @@ $VERSION = "1.70";
 	   ld => undef,
 	   ldRes => undef,
 	   dn => undef,
+	   aciCTRLSuported => undef,
+	   aciCTRL => undef,
 	  );
 
 #############################################################################
@@ -173,11 +176,64 @@ sub init {
   };
   return unless $ld;
 
+  $ret = ldap_set_option($ld, LDAP_OPT_PROTOCOL_VERSION, LDAP_VERSION3);
+  return unless ($ret == LDAP_SUCCESS);
+
   $self->ld($ld);
   $ret = ldap_simple_bind_s($ld, $self->bindDN, $self->bindPasswd);
 
+  $self->{aciCTRLSuported} = undef;
+  if (($ret == LDAP_SUCCESS) and ($self->{bindPasswd})) {
+    return $self->initACI;
+  } else {
+    return (($ret == LDAP_SUCCESS) ? 1 : undef);
+  };
+
+  die "myPerlLDAP::conn: We can't reach this point";
   return (($ret == LDAP_SUCCESS) ? 1 : undef);
 } # init --------------------------------------------------------------------
+
+sub initACI {
+  my $self = shift;
+  # Why isn't posible this?? Server returns error code
+  # 53 = LDAP_UNWILLING_TO_PERFORM
+  # warn ldap_compare_s($ld, "", "supportedControl", "1.3.6.1.4.1.42.2.27.9.5.2");
+
+  # Check if server is supporting ACI control if so, prepare one
+  # for automatic ACI retrieval (nebo jak se to pise)
+  my @attrs = ("supportedControl");
+  my ($resv);
+  my ($res) = \$resv;
+  if (! ldap_search_s($self->ld, "", LDAP_SCOPE_BASE, "(objectClass=*)",
+		      defined(\@attrs) ? \@attrs : 0,
+		      0,
+		      defined($res) ? $res : 0)) {
+    my $aciControl = 0;
+
+    my $entry = ldap_first_entry($self->ld,$res);
+    my $ber;
+    my $attr = ldap_first_attribute($self->ld,$entry,$ber);
+
+    while (defined($attr)) {
+      if (lc $attr eq 'supportedcontrol') {
+	my @vals = ldap_get_values($self->ld, $entry, $attr);
+	foreach my $oid (@vals) {
+	  $aciControl = 1 if ($oid eq '1.3.6.1.4.1.42.2.27.9.5.2');
+	};
+	undef $attr;
+      } else {
+	$attr = ldap_next_attribute($self->ld, $entry, $ber);
+      }
+    };
+
+    $self->{aciCTRLSuported} = 1 if ($aciControl);
+
+    return 1;
+  } else {
+    die "myPerlLDAP::conn: This should not happen";
+    return undef;
+  };
+};
 
 #############################################################################
 # Create a new, empty, Entry object.
@@ -272,10 +328,16 @@ sub search {
 #    };
     return undef;
   } else {
-    if (! ldap_search_s($self->ld, $basedn, $scope, $filter,
-			defined(\@attrs) ? \@attrs : 0,
-			defined($attrsonly) ? $attrsonly : 0,
-			defined($res) ? $res : 0)) {
+    push @attrs, 'aclRights' if (defined($self->aciCTRL));
+
+    if (! ldap_search_ext_s($self->ld,
+			    $basedn, $scope, $filter,
+			    defined(\@attrs) ? \@attrs : 0,
+			    defined($attrsonly) ? $attrsonly : 0,
+			    defined($self->aciCTRL) ? [$self->aciCTRL] : undef,
+			    undef,
+			    undef, 0,
+			    defined($res) ? $res : 0)) {
       my $sRes = new myPerlLDAP::searchResult($self->ld, $res);
       $sRes->owner($self);
       return $sRes;
@@ -527,9 +589,84 @@ sub simpleAuth {
 
   $ret = ldap_simple_bind_s($self->ld, $dn, $pswd);
 
+  $self->{aciCTRLSuported} = undef;
+  if (($ret == LDAP_SUCCESS) and (defined($pswd))) {
+    return $self->initACI;
+  } else {
+    return (($ret == LDAP_SUCCESS) ? 1 : undef);
+  };
+
+  die "myPerlLDAP::conn: We can't reach this point";
   return (($ret == LDAP_SUCCESS) ? 1 : 0);
 }; # simpleAuth -------------------------------------------------------------
 
+
+#############################################################################
+# Retrieve ACI info from server if posible
+#
+sub readACI {
+  my $self = shift;
+  my $dn = shift;
+  my @attrs = @_;
+
+  if ($self->aciCTRLSuported) {
+    my $ctrl;
+    my $ret = ldap_create_rights_control($self->ld,
+					 "",#as actualy loged user
+					 \@attrs,#list of attrs we are interested in
+					 1,#critical? YES!
+					 $ctrl);
+    # error code is accesible via $self->ld
+    return undef unless ($ret==LDAP_SUCCESS);
+
+    my $res;
+    #push @attrs, 'aclRights';
+    $ret = ldap_search_ext_s($self->ld,
+			     $dn, LDAP_SCOPE_BASE, '(objectClass=*)',
+			     ['aclRights'],0,
+			     [$ctrl],
+			     undef,
+			     undef,0,
+			     $res);
+    return undef unless ($ret==LDAP_SUCCESS);
+
+    ldap_control_free($ctrl); $ctrl = undef;
+
+    my $aci = new myPerlLDAP::aci($self->ld, $res);
+    $aci->owner($self);
+    return $aci;
+  } else {
+    die "myPerlLDAP::readACI: XXXXXXXXXXXXXXXXXXX";
+  };
+};
+
+sub initACICTRL {
+  my $self = shift;
+  my @attrs = @_;
+
+  $self->freeACICTRL;
+
+  if ($self->aciCTRLSuported) {
+    my $ret = ldap_create_rights_control($self->ld,
+					 "",#as actualy loged user
+					 \@attrs,#list of attrs we are interested in
+					 1,#critical? YES!
+					 $self->{aciCTRL});
+    # error code is accesible via $self->ld
+    return undef unless ($ret==LDAP_SUCCESS);
+  } else {
+    die "myPerlLDAP::initACICTRL: XXXXXXXXXXXXXXXXXXX";
+  };
+};
+
+sub freeACICTRL {
+  my $self = shift;
+
+  # Release old ACICTRL if any was defined
+  if (defined($self->aciCTRL)) {
+    ldap_control_free($self->aciCTRL); $self->aciCTRL(undef);
+  };
+};
 
 #############################################################################
 # Mandatory TRUE return value.
