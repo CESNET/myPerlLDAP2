@@ -1,20 +1,41 @@
 
-		      myPerlLDAP by Jan Tomasek <jan@tomasek.cz>
+	          myPerlLDAP by Jan Tomasek <jan@tomasek.cz>
 
-	this module was developed for my project on which working for CESNET
+     this module was developed for my project on which working for CESNET
 
-			 	 vist us at 
-                       http://www.cesnet.cz/english/ 
+			        vist us at 
+                      http://www.cesnet.cz/english/ 
 
 
 myPerlLDAP is set of classes for work with LDAP databases. Main diference
 to other modules like Net::LDAP, Mozilla::perlLDAP and Mozilla::perlOpenLDAP
-is that strictly OO you can work with it only trought set of classes.
+is that it is strictly OO, you can work with it only, trought set of classes.
 
 It depends on Mozilla::perlOpenLDAP, it is using some pieces of code from
 Mozilla:perlLDAP fror more info look at LEGAL file.
 
 Instalation
 ~~~~~~~~~~~
-cd <expanded module directory>
-rm -r myPerlLDAP/Attribute/.auto
+Instalation of the myPerlLDAP is separated into two steps
+
+Step 1:
+	tar zxvf myPerlLDAP-<version>.tar.gz
+	cd myPerlLDAP-<version>
+	perl Makefile.PL
+	make
+	make test
+	su -c "make install"
+
+	Now you have installed basic part - by hand written classes - the core.
+
+Step 2:
+	<somewhere you installed package>/myPerlLDAP-buildClasses.pl
+	[Enter servername]
+	[Enter serverport]
+	[Enter target directory] ... this is path where temporary module
+				     will be created
+	cd <target directory>
+				 ... now you should check created clasess
+	perl Makefile.PL
+	make 
+	su -c "make install"
