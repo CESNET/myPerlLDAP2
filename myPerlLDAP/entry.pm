@@ -9,7 +9,7 @@ use myPerlLDAP::attribute;
 
 use vars qw($VERSION $_D $AUTOLOAD %fields);
 
-$VERSION = "0.5.0";
+$VERSION = "0.5.1";
 
 # TODO:
 # - constructor for completly NEW entry (not loaded from ldap)
@@ -359,7 +359,7 @@ sub XML {
   my @ret;
   my $attr;
 
-  push @ret, "<dsml:entry dn=\"".$self->dn."\">";
+  push @ret, "<dsml:entry dn=\"".$self->dn."\" xmlns:dsml=\"http://www.w3.org/2400/dsml\">";
   foreach $attr ($self->attributesList) {
     push @ret, map { "  $_"} @{$self->attr($attr)->XML};
   };

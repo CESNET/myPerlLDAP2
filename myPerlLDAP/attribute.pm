@@ -7,7 +7,7 @@ use strict;
 use Carp;
 use vars qw($VERSION  $_D $AUTOLOAD %fields);
 
-$VERSION = "0.5.0";
+$VERSION = "0.5.2";
 
 # Debug levels:
 #  1 ... warnings about nasty class usage
@@ -46,8 +46,9 @@ sub new {
   my $proto = shift;
   my $class = ref($proto) || $proto;
   my $requestedClass = lc shift;
+  my %FIELDS = %fields;
 
-  my $self = bless {_permitted_fields => \%fields, %fields}, $class;
+  my $self = bless {_permitted_fields => \%FIELDS, %fields}, $class;
 
   $self->name($requestedClass);
   $self->init;
@@ -430,7 +431,7 @@ sub XML {
 	push @ret, "  <dsml:value$TYPE>$value</dsml:value>";
       };
     };
-    push @ret, "</dsml:attr name=\"".$self->name."\">";
+    push @ret, "</dsml:attr>";
   };
 
   return \@ret;
