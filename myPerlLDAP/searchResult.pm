@@ -125,10 +125,10 @@ sub nextEntry {
   };
 
   if (! $ldentry) {
-    if (defined($self->{"ldres"})) {
-      ldap_msgfree($self->{"ldres"});
-      undef $self->{"ldres"};
-    }
+    #if (defined($self->{"ldres"})) {
+    #  ldap_msgfree($self->{"ldres"});
+    #  undef $self->{"ldres"};
+    #}
     return undef;
   };
 
@@ -158,6 +158,13 @@ sub nextEntry {
 
   $entry->clearModifiedFlags;
   return $entry;
+};
+
+# Allows using nextEntry from beginning
+sub reset {
+  my $self = shift;
+
+  $self->{"ldfe"} = 1;
 };
 
 # Return count of returned entries
