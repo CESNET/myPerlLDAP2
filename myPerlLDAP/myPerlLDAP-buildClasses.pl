@@ -31,7 +31,7 @@ $myPerlLDAP::attribute::_D=0;
 
 my %tree; # This is global variable =?> Am I dirty programmer? :))
 
-my $LDAPServerHost = 'localhost';
+my $LDAPServerHost = 'cml.cesnet.cz';
 my $LDAPServerPort = LDAP_PORT;
 my $attrClassesPath = "/tmp/myPerlLDAP-ac";
 my $autoClassesPath = "attribute";
@@ -41,7 +41,7 @@ my @files;
 my $match_OID       = qw /^(\S+)\s+NAME/;
 my $match_NAME      = qw /NAME\s+\'([\w\-]+)\'/;
 my $match_MNAMES    = qw /NAME\s+\(\s*([\w\s\'\-]+)\s*\)/;
-my $match_EQUALITY  = qw /EQUALITY\s+(\w+)/;
+my $match_EQUALITY  = qw /EQUALITY\s+([^\s]*)/;
 my $match_SYNTAX    = qw /SYNTAX\s+[\']*([\d\.\}\{]+)[\']*/;
 my $match_SUP       = qw /SUP\s+(\w+)/;
 my $match_DESC      = qw /DESC\s+\'(.*?)\'/;
@@ -50,6 +50,8 @@ my $match_ORDERING  = qw /ORDERING\s+(\w+)/;
 my $match_USAGE     = qw /USAGE\s+(\w+)/;
 my $match_SIGNLEV   = qw /SINGLE-VALUE/;
 my $match_READONLY  = qw /NO-USER-MODIFICATION/;
+my $match_XORIGIN   = qw /X-ORIGIN\s*\'(.+)\'/;
+my $match_XDSUSE    = qw /X-DS-USE\s*\'(.+)\'/;
 
 my $superclasses = {
 		    '1.3.6.1.4.1.1466.115.121.1.3'   => '_attributeTypeDescription',
@@ -158,6 +160,12 @@ sub parseAttributeType {
 
   if ($attr =~ s/$match_READONLY//o) {
     $attr{'readOnly'} = 1;
+  };
+
+  if ($attr =~ s/$match_XORIGIN//o) {
+  };
+
+  if ($attr =~ s/$match_XDSUSE//o) {
   };
 
   $attr =~ s/ *//go;
@@ -377,7 +385,7 @@ my $conn = new myPerlLDAP::conn({"host"   => $LDAPServerHost,
   or die "Can't connect to the LDAP server ($LDAPServerHost:$LDAPServerPort)";
 
 # Findout where schema is stored
-my $sres = $conn->search(' ',
+my $sres = $conn->search('',
 			 LDAP_SCOPE_BASE,
 			 '(objectClass=*)',
 			 0,
