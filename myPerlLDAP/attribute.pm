@@ -413,6 +413,13 @@ sub classNamePrefix {
   return 'myPerlLDAP::attribute::';
 };
 
+sub xmlAttributeArgs {
+  return undef;
+};
+
+sub xmlValueArgs {
+  return undef;
+};
 
 sub XML {
   my $self = shift;
@@ -426,14 +433,22 @@ sub XML {
     };
     push @ret, '</dsml:objectclass>';
   } else {
-    push @ret, "<dsml:attr name=\"".$self->name."\">";
+    my $attrArgs ='';
+    $attrArgs = $self->xmlAttributeArgs if ($self->xmlAttributeArgs);
+    push @ret, "<dsml:attr name=\"".$self->name."\"$attrArgs>";
     foreach my $type (@{$self->types}) {
-      my $getMethod='get';
-      $getMethod = 'humanReadableForm' if ($self->can('humanReadableForm'));
-      foreach $value (@{$self->$getMethod($type)}) {
+      foreach $value (@{$self->get($type)}) {
 	my $TYPE = "";
 	$TYPE = " type=\"$type\"" if ($type);
-	push @ret, "  <dsml:value$TYPE>$value</dsml:value>";
+
+	my $valueArgs ='';
+	$valueArgs = $self->xmlValueArgs($value)
+	  if ($self->xmlValueArgs($value));
+
+	$value = $self->humanReadableForm($value)
+	  if ($self->can('humanReadableForm'));
+
+	push @ret, "  <dsml:value$TYPE$valueArgs>$value</dsml:value>";
       };
     };
     push @ret, "</dsml:attr>";
