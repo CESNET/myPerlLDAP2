@@ -249,7 +249,6 @@ sub addAsValues {
       $class = 'myPerlLDAP::attribute';
     };
   };
-  warn "$attr -> $class";
 
   # Create and add new attribute
   my $new_attr = $class->new($attr);
