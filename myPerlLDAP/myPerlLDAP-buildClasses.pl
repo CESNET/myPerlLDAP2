@@ -8,7 +8,7 @@ use myPerlLDAP::attribute;
 use perlOpenLDAP::API qw(LDAP_PORT LDAP_SCOPE_BASE);
 
 use vars qw($VERSION);
-$VERSION = "0.5.2";
+$VERSION = "0.5.3";
 
 $myPerlLDAP::attribute::_D=0;
 
@@ -209,7 +209,7 @@ sub attributeHash2Class {
   if (defined($syntax)) {
     $superclass="myPerlLDAP::attribute::$superclasses->{$syntax}";
   } elsif ((!defined($syntax)) or ()) {
-    $superclass="myPerlLDAP::attribute::$attr->{sup}";
+    $superclass="myPerlLDAP::attribute::".lc($attr->{sup});
   } else {
     warn "This should never happen. Coding error! Please report conditions.";
     return 0;
@@ -279,6 +279,7 @@ sub new {
   return \$self;
 };
 
+1;
 
 EOF
 ;
