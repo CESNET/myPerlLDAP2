@@ -20,7 +20,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # #############################################################################
 
-BEGIN { $| = 1; print "1..7\n";}
+BEGIN { $| = 1; print "1..15\n";}
 #END {print "not ok 1\n" unless $SOK;}
 
 use lib qw(/home/honza/proj/myPerlLDAP);
