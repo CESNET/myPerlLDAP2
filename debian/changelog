@@ -1,3 +1,9 @@
+libmyperlldap-perl (1.67-1) unstable; urgency=low
+
+  * New upstream version
+
+ -- Jan Tomasek <jan@tomasek.cz>  Thu, 20 Mar 2003 16:28:29 +0100
+
 libmyperlldap-perl (1.66-1) unstable; urgency=low
 
   * New upstream version
