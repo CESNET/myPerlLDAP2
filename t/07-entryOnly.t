@@ -29,7 +29,7 @@ use vars qw($SOK);
 use myPerlLDAP::abstract;
 use myPerlLDAP::attribute;
 use myPerlLDAP::entry;
-use myPerlLDAP::searchResults;
+use myPerlLDAP::searchResult;
 use myPerlLDAP::utils;
 use myPerlLDAP::conn;
 use t::C;
@@ -89,6 +89,7 @@ print "ok 6\n" if $SOK;
 
 # Test adding to singleValue attr
 $SOK = 0;
+$entry->attr('uidNumber')->singleValue(1);
 $entry->attr('uidNumber')->addValues(10000) or $SOK=1;
 print "not ok 7\n" unless $SOK;
 print "ok 7\n" if $SOK;
