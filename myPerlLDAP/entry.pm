@@ -402,6 +402,7 @@ sub setValues {
     my $res = $self->addValues($attrName, @_);
     $attr = $self->attr($attrName);
     $attr->{_cleared} = 1; # 3x FUJ!!!
+    return $res;
   } else {
     $attr->clearValues;
     return $self->addValues($attrName, @_);
