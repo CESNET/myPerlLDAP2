@@ -1,3 +1,9 @@
+libmyperlldap-perl (1.52-1) unstable; urgency=low
+
+  myPerlLDAP::searchResult - fixed one forgotten call to renamed method add()
+
+ -- Jan Tomasek <jan@tomasek.cz>  Sun, 21 Jul 2002 17:41:00 +0200
+
 libmyperlldap-perl (1.51-1) unstable; urgency=low
 
   * class myPerlLDAP::searchResults renamed to searchResult
