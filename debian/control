@@ -8,7 +8,7 @@ Standards-Version: 3.5.1
 Package: libmyperlldap-perl
 Architecture: all
 Depends: ${perl:Depends}, libperlopenldap-api-perl (>=1.4-1)
-fDescription:  Object oriented classes for work with LDAP
+Description:  Object oriented classes for work with LDAP
  myPerlLDAP is set of classes for work with LDAP databases. Main diference
  to other modules like Net::LDAP, Mozilla::perlLDAP and Mozilla::perlOpenLDAP
  is that it is strictly OO, you can work with it only, trought set of classes.
