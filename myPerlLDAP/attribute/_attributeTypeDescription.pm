@@ -20,7 +20,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # #############################################################################
 
-package myPerlLDAP::attribute::_AttributeTypeDescription;
+package myPerlLDAP::attribute::_attributeTypeDescription;
 
 use strict;
 use myPerlLDAP::attribute;
