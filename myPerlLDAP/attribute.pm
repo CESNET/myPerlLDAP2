@@ -7,14 +7,14 @@ use strict;
 use myPerlLDAP::Attribute::_OID;
 
 use Carp;
-use vars qw($VERSION);
+use vars qw($VERSION  $_D);
 
 $VERSION = "0.0.1";
 
 # Debug levels:
 #  1 ... warnings about nasty class usage (trying set value of read-only attr ...)
 # 10 ... excution of some methods
-my $_D = 1;
+$_D = 1;
 
 sub new {
   my $proto = shift;
@@ -26,7 +26,7 @@ sub new {
     $class = "myPerlLDAP::Attribute::$requestedClass";
   } else {
     if ($_D || $self->{_D}) {
-      carp("Can't load module \"myPerlLDAP::Attribute::$requestedClass\" attribute \"$requestedClass\" created as \"$class\"");
+      carp("$_D Can't load module \"myPerlLDAP::Attribute::$requestedClass\" attribute \"$requestedClass\" created as \"$class\"");
     };
   };
 
