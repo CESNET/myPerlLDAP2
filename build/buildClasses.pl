@@ -12,6 +12,8 @@ $VERSION = "0.2.2";
 
 $myPerlLDAP::Attribute::_D=0;
 
+my %tree; # This is global variable =?> Am I dirty programmer? :))
+
 my $LDAPServerHost;
 my $LDAPServerPort = LDAP_PORT;
 
@@ -282,6 +284,13 @@ EOF
 ;
     close(CLASS);
     symlink("$autoClassesPath/$name\.pm", "$name\.pm") or die "Can't create link $attrClassesPath/$autoClassesPath/$name\.pm->$attrClassesPath/$name\.pm: $!";
+
+   if (!defined($tree{$superclass})) {
+     my @array;
+     $tree{$superclass}=\@array;
+   };
+   $superclass =~ s/.*:://;
+   push(@{$tree{$superclass}}, $name);
   };
 
   return 1;
@@ -310,6 +319,21 @@ sub compareAttributeHash {
   };
 
   return 1;
+};
+
+sub printClassTree {
+  my $attr = shift;
+  my $shift = shift;
+
+  my $cattr;
+  my $ret = "$shift$attr\n";
+  if ($tree{$attr}){
+    foreach $cattr (sort @{$tree{$attr}}) {
+      $ret .= printClassTree($cattr, "$shift     ");
+    };
+  };
+
+  return $ret;
 };
 
 if ((@ARGV>2) or ((@ARGV)<1)) {
@@ -380,7 +404,22 @@ while ($entry) {
   $entry = $sres->nextEntry();
 };
 
+# Write automatic classes to files
 my $oid;
 foreach $oid (keys %attrList) {
   attributeHash2Class($attrList{$oid});
 };
+
+# Create .pod file with tree structure of attributes classes
+my @array = values %$superclasses;
+$tree{'Attribute'}=\@array;
+open(TREE, ">$originalDir/ClassTree.pod");
+print TREE "=head1 NAME
+
+myPerlLDAP::Attribute inheritance diagram
+
+=head1 DESCRIPTION\n\n";
+
+print TREE printClassTree('Attribute', '  ');
+print TREE "\n=cut\n";
+close(TREE);
