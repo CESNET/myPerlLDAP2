@@ -1,0 +1,5 @@
+myPerlLDAP/Conn.pm
+myPerlLDAP/SearchResults.pm
+myPerlLDAP/Entry.pm
+myPerlLDAP/Attribute.pm
+myPerlLDAP/Utils.pm
