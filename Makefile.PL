@@ -7,9 +7,7 @@ WriteMakefile(
 	      'NAME'		=> 'myPerlLDAP',
 	      'DISTNAME'        => 'myPerlLDAP',
 	      'VERSION_FROM'	=> 'myPerlLDAP/Conn.pm', # finds $VERSION
-	      'PREREQ_PM'	=> {Mozilla::OpenLDAP::API => 1.4},
+	      'PREREQ_PM'	=> {'Mozilla::OpenLDAP::API' => 1.4},
 	      'AUTHOR'          => 'Jan Tomasek <jan@tomasek.cz>',
 	      'PMLIBDIRS'       => ['myPerlLDAP'],
-#	      'PM'              => \%PM,
-#	      'MAN3PODS'        => \%MAN3PODS
 	     );
