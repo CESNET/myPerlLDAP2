@@ -1,3 +1,9 @@
+libmyperlldap-perl (1.91-1) unstable; urgency=low
+
+  * New upstream version
+
+ -- Jan Tomasek <semik@prg-v-7-211.static.adsl.vol.cz>  Wed, 26 Jan 2005 14:58:20 +0100
+
 libmyperlldap-perl (1.90-1) unstable; urgency=low
 
   * New upstream version
