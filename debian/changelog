@@ -2,14 +2,28 @@ libmyperlldap-perl (1.50-1) unstable; urgency=low
 
   * created class abstract it implements error and errorMessage for
     all other classes in myPerlLDAP module.
-  * entry is inherited from abstract
-  * some entry methods where renamed and modified - no backward
-    compatibility:
-      - add => addAttr ... enhanced posible attrs, look at sources
-      - rename => renameAttr
-      - attributesList => attrList ... return array ref not array
-      - addAsValues => addValues ... look at sources
-	
+  * myPerlLDAP::entry
+    * entry is inherited from abstract
+    * some entry methods where renamed and modified - no backward
+      compatibility:
+        - add => addAttr ... enhanced posible attrs, look at sources
+        - remove => removeAttr
+        - attributesList => attrList ... return array ref not array
+        - addAsValues => addValues ... look at sources
+    * removed module wide variable $_D use %fileds{debug} instead
+    * new functions
+	- setValues
+	- removeValues
+	- getValues
+  * myPerlLDAP:attribute
+    * removed module wide variable $_D use %fileds{debug} instead
+    * some attribute methods where renamed and modified - no backward
+      compatibility:
+	- add => addValues
+	- set => setValues
+	- remove => removeValues
+	- get => getValues
+
  -- Jan Tomasek <jan@tomasek.cz>  Fri, 03 May 2002 12:03:00 +0200
 
 libmyperlldap-perl (1.00-2) unstable; urgency=low
