@@ -40,6 +40,7 @@ use vars qw($_D @ISA %fields);
 	   debug  => 1,
 	   sEntr  => undef,
 	   sEntrI => 0,
+	   owner  => undef,
 	  );
 
 # TODO:
@@ -62,10 +63,12 @@ sub init {
   my $self = shift;
   my $ld = shift;
   my $res = shift;
+  my $conn = shift;
 
   if (defined($ld) and defined($res)) {
     $self->{ldres}=$res;
     $self->{ld}=$ld;
+    $self->owner($conn);
     $self->{ldfe}=1;
 
     return $self;
@@ -269,3 +272,5 @@ sub owner {
     return $self->{OWNER};
   };
 };
+
+1;
