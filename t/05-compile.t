@@ -21,17 +21,18 @@
 # #############################################################################
 
 BEGIN { $| = 1; print "1..1\n";}
-#END {print "not ok 1\n" unless $SOK;}
 
 use lib qw(/home/honza/proj/myPerlLDAP);
 use strict;
 use vars qw($SOK);
 
+use myPerlLDAP::abstract;
 use myPerlLDAP::attribute;
 use myPerlLDAP::entry;
 use myPerlLDAP::searchResults;
 use myPerlLDAP::utils;
 use myPerlLDAP::conn;
+use t::C;
 
 use myPerlLDAP::attribute::_guide;
 use myPerlLDAP::attribute::_fax;
