@@ -462,8 +462,8 @@ sub update {
     $entry->clearModifiedFlags;
     return 1;
   } else {
-    print STDERR "Failed to update entry \"".$entry->dn."\"\n".
-    print STDERR Dumper($rec)."\n";
+    #print STDERR "Failed to update entry \"".$entry->dn."\"\n".
+    #print STDERR Dumper($rec)."\n";
     return undef;
   };
 }; # update -----------------------------------------------------------------
