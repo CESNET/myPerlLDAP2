@@ -28,6 +28,7 @@ use Carp;
 use perlOpenLDAP::API qw(LDAP_SUCCESS LDAP_CONSTRAINT_VIOLATION
 			 LDAP_TYPE_OR_VALUE_EXISTS LDAP_NO_SUCH_OBJECT);
 use myPerlLDAP::attribute;
+use myPerlLDAP::utils qw(quote4XML quote4HTTP);
 use vars qw($AUTOLOAD @ISA %fields);
 
 @ISA = ("myPerlLDAP::abstract");
@@ -516,6 +517,8 @@ sub XML {
 
 	$value = $self->humanReadableForm($value)
 	  if ($self->can('humanReadableForm'));
+
+	$value = quote4XML($value);
 
 	push @ret, "  <dsml:value$TYPE$valueArgs>$value</dsml:value>";
       };
