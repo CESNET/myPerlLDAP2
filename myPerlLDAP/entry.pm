@@ -18,7 +18,7 @@ $VERSION = "0.5.0";
 
 
 # Debug levels:
-#  1 ... warnings about nasty class usage (trying set value of read-only attr ...)
+#  1 ... warnings about nasty class usage
 # 10 ... excution of some methods
 $_D = 1;
 
@@ -29,6 +29,7 @@ $_D = 1;
 	   attrOrder   => [],
 	   attrChanges => [],
 	   attrInit    => {},
+	   attrMap     => {},
 	  );
 
 sub new {
@@ -42,11 +43,11 @@ sub new {
   my $self = bless {_permitted_fields => \%fields, %fields}, $class;
   foreach my $field (keys %fields) {
     if (ref($fields{$field}) eq "HASH") {
-      my %hash;
+      my %hash = %{$fields{$field}};
       $self->{$field} = \%hash;
     };
     if (ref($fields{$field}) eq "ARRAY") {
-      my @array;
+      my @array = @{$fields{$field}};
       $self->{$field} = \@array;
     };
   };
@@ -230,13 +231,19 @@ sub addAsValues {
   };
   my $type = shift;
 
-  my $class = myPerlLDAP::attribute::classNamePrefix().$attr;
-  if (eval "require $class" ) {
+  my $class;
+
+  if (defined($self->attrMap->{$attr})) {
+    $class = $self->attrMap->{$attr};
   } else {
-    if (($myPerlLDAP::attribute::_D) and ($attr ne "")) {
-      carp("Can't load module \"$class\" attribute \"$attr\" created as \"myPerlLDAP::attribute\"");
+    $class = myPerlLDAP::attribute::classNamePrefix().$attr;
+    if (eval "require $class" ) {
+    } else {
+      if (($myPerlLDAP::attribute::_D) and ($attr ne "")) {
+	carp("Can't load module \"$class\" attribute \"$attr\" created as \"myPerlLDAP::attribute\"");
+      };
+      $class = 'myPerlLDAP::attribute';
     };
-    $class = 'myPerlLDAP::attribute';
   };
 
   # Create and add new attribute
