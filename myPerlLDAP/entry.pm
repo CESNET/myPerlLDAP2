@@ -24,7 +24,7 @@ package myPerlLDAP::entry;
 
 use strict;
 use Carp;
-
+use Data::Dumper;
 use perlOpenLDAP::API qw(LDAP_SUCCESS LDAP_NO_SUCH_ATTRIBUTE
 			 LDAP_ALREADY_EXISTS);
 use myPerlLDAP::abstract;
@@ -563,6 +563,17 @@ sub makeModificationRecord {
       # I not process it here because it is being added as new attr ...
   };
 
+  # Prazny retezec neni hodnota, takze k certu s takovym atributem
+  foreach my $attrName (keys %rec) {
+    if (defined($rec{$attrName}->{rb})) {
+      my $vals = $rec{$attrName}->{rb};
+      if ((scalar @$vals == 1) and ($vals->[0] eq '')) {
+	$rec{$attrName}->{rb} = [];
+      };
+    };
+  };
+
+#  warn Dumper(\%rec);
   return \%rec;
 };
 
