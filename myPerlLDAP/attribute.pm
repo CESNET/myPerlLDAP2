@@ -344,7 +344,7 @@ sub matchValues {
     my ($v,$t) = @$value;
     $t = "" unless $t;
     if ($t eq $type) {
-      if ($v =~ /$expr/) {
+      if ($v =~ /$expr/i) {
 	push @values, ($v);
       };
     };
