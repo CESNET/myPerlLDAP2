@@ -37,13 +37,17 @@ package myPerlLDAP::entry;
 use strict;
 use Carp;
 
+use perlOpenLDAP::API qw(LDAP_SUCCESS LDAP_NO_SUCH_ATTRIBUTE
+			 LDAP_ALREADY_EXISTS);
+use myPerlLDAP::abstract;
 use myPerlLDAP::attribute;
 use myPerlLDAP::utils qw(quote4XML quote4HTTP);
 
-use vars qw($_D $AUTOLOAD %fields);
+use vars qw($_D $AUTOLOAD @ISA);
+
+@ISA = ("myPerlLDAP::abstract");
 
 # TODO:
-# - constructor for completly NEW entry (not loaded from ldap)
 # - renaming atributes
 # - change DN
 
@@ -53,18 +57,18 @@ use vars qw($_D $AUTOLOAD %fields);
 # 10 ... excution of some methods
 $_D = 1;
 
-%fields = (
-	   dn          => undef,
-	   debug       => $_D,
-	   owner       => undef,
-	   attrData    => {},
-	   attrOrder   => [],
-	   attrChanges => [],
-	   attrInit    => {},
-	   attrMap     => {},
-	  );
+my %fields = (
+	      dn          => undef,
+	      debug       => $_D,
+	      owner       => undef,
+	      attrData    => {},
+	      attrOrder   => [],
+	      attrChanges => [],
+	      attrInit    => {},
+	      attrMap     => {},
+	     );
 
- sub new {
+sub new {
   my $proto = shift;
   my $class = ref($proto) || $proto;
 
@@ -72,7 +76,13 @@ $_D = 1;
     carp("$class created");
   };
 
-  my $self = bless {_permitted_fields => \%fields, %fields}, $class;
+  my $self = bless $class->SUPER::new(@_), $class;
+
+  foreach my $element (keys %fields) {
+    $self->{_permitted_fields}->{$element} = $fields{$element};
+  };
+  @{$self}{keys %fields} = values %fields;
+
   foreach my $field (keys %fields) {
     if (ref($fields{$field}) eq "HASH") {
       my %hash = %{$fields{$field}};
@@ -108,28 +118,303 @@ sub DESTROY {
   };
 };
 
-sub AUTOLOAD {
-  my $self = shift;
-  my $class = ref($self)
-    or carp "cannot call method $AUTOLOAD on non reference $self";
-  my $name = $AUTOLOAD;
-  $name =~ s/.*://;
+# #############################################################################
+# Methods for work with attributes
+# #############################################################################
 
-  if (exists $self->{_permitted_fields}->{$name}) {
-    if (@_) {
-      return $self->{$name} = shift;
-    } else {
-      return $self->{$name};
+# #############################################################################
+# Removes attribute(s) by it's name
+#
+# Input: scalar, array, arrayref
+#
+# Output: count of removed attrs
+#
+# Error code is set to LDAP_NO_SUCH_ATTRIBUTE if one of attr wasn't in entry.
+
+sub removeAttr {
+  my $self = shift;
+  my $removedCounter = 0;
+
+  $self->error(LDAP_SUCCESS);
+
+  while (my $attr = shift) {
+    my @a;
+    if ($attr eq 'ARRAY') { @a = @$attr } else { @a = ($attr) };
+    foreach my $a (@a) {
+      $a = lc $a;
+      if ($self->attr($a)) {
+	delete $self->attrData->{lc $a};
+	push @{$self->attrChanges}, (lc "-$a");
+	my @changes = grep(!/^$a$/, @{$self->attrOrder});
+	$self->attrOrder(\@changes);
+	$removedCounter++;
+      } else {
+	$self->error(LDAP_NO_SUCH_ATTRIBUTE);
+      };
     };
-  } elsif ($name eq 'DESTROY') {
-    if ($self->can('DESTROY')) {
-      $self->DESTROY;
-    } else {
-      return;
-    };
-  } else {
-    carp "Can't access method '$name' in class $class";
   };
+
+  return $removedCounter;
+}; # removeAttr ---------------------------------------------------------------
+
+# #############################################################################
+# Add attribute(s) to entry
+#
+# Input: blessed scalar, array of blessed scalars, arrayref to ...
+#
+# Output: count of added atributes
+#
+# Error code is set to LDAP_ALREADY_EXISTS if one of attrs was already in
+# entry.
+
+sub addAttr {
+  my $self = shift;
+  my $addedCounter = 0;
+
+  while (my $attr = shift) {
+    my @a;
+    if ($attr eq 'ARRAY') { @a = @$attr } else { @a = ($attr) };
+    foreach my $a (@a) {
+      if (defined($self->attr($a->name))) {
+	$self->error(LDAP_ALREADY_EXISTS);
+      } else {
+	$a->owner($self);
+	push @{$self->attrOrder}, (lc $a->name);
+	push @{$self->attrChanges}, (lc "+".$a->name);
+	$self->attrData->{lc $a->name}=$a;
+	# object will be added to ATTR_ADDED so is useless to be marked
+	# as modified because it will be writen to an LDAP db completely
+	# again
+	$self->attrData->{lc $a->name}->clearModifiedFlag;
+	$addedCounter++;
+      };
+    };
+  };
+
+  $self->error(LDAP_SUCCESS) if ($self->error != LDAP_ALREADY_EXISTS);
+
+  return $addedCounter;
+}; # addAttr ------------------------------------------------------------------
+
+# #############################################################################
+# Return myPerlLDAP::attribute class by it's name
+#
+# Input: name of required attribute
+#
+# Output: count of added atributes
+#
+# Error code is set to LDAP_NO_SUCH_ATTRIBUTE if one of attrs was already in
+# entry.
+
+sub attr {
+  my $self = shift;
+  my $attr = lc shift;
+
+  $self->error(LDAP_SUCCESS);
+
+  if (defined($self->attrData->{$attr})) {
+    return $self->attrData->{$attr};
+  } else {
+    $self->error(LDAP_NO_SUCH_ATTRIBUTE);
+    return undef;
+  };
+}; # attr ---------------------------------------------------------------------
+
+# #############################################################################
+# Return ordered attribute names list, order is defined by user
+#
+# Input: none
+#
+# Output: arrayref of attr names
+#
+
+sub attrList {
+  my $self = shift;
+
+  $self->error(LDAP_SUCCESS);
+
+  my @out = @{$self->attrOrder};
+  return \@out;
+}; # attrList -----------------------------------------------------------------
+
+# #############################################################################
+# Methods for exporting content of entry
+# #############################################################################
+
+# #############################################################################
+# Return arrayref of ldif of entry
+#
+# Input: none
+#
+# Output: arrayref of ldif of entry
+#
+
+sub LDIF {
+  my $self = shift;
+
+  $self->error(LDAP_SUCCESS);
+
+  my ($attr, $value);
+  my (@out);
+
+  # TODO: dn, objectclasses, potom ten prvni z dn (RDN)
+  push @out, ("dn: ".$self->dn);
+  foreach $attr (@{$self->attrList}) {
+    if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
+      push @out, @{$self->attr($attr)->LDIF};
+    }; # else: Attribute which have no value doesn't exists.
+  };
+
+  return \@out;
+}; # LDIF ---------------------------------------------------------------------
+
+# #############################################################################
+# Return ldif of entry
+#
+# Input: none
+#
+# Output: ldif of entry
+
+sub LDIFString {
+  my $self = shift;
+
+  $self->error(LDAP_SUCCESS);
+
+  return join("\n", @{$self->LDIF})."\n";
+}; # LDIFString ---------------------------------------------------------------
+
+# #############################################################################
+# Return arrayref of XML (based on dsml) of entry
+#
+# Input: none
+#
+# Output: arrayref of XML of entry
+
+sub XML {
+  my $self = shift;
+  my @ret;
+  my $attr;
+
+  push @ret, "<dsml:entry dn=\"".quote4XML($self->dn)."\" urldn=\"".quote4XML(quote4HTTP($self->dn))."\" xmlns:dsml=\"http://www.dsml.org/DSML\">";
+  foreach $attr (@{$self->attrList}) {
+    push @ret, map { "  $_"} @{$self->attr($attr)->XML};
+  };
+  push @ret, "</dsml:entry>";
+
+  return \@ret;
+}; # XML ----------------------------------------------------------------------
+
+# #############################################################################
+# Return XML of entry
+#
+# Input: optional argument ident for producing nice output
+#
+# Output: XML of entry
+
+sub XMLString {
+  my $self = shift;
+  my $ident = shift;
+
+  $ident = "" unless $ident;
+
+  return join("\n", map { "$ident$_" } @{$self->XML})."\n";
+};
+
+# #############################################################################
+# Methods for work with attribute values. This is against my OO architecture
+# but it's much more comfortable to work with attribute values in this way
+# because it reduces count of if(!defined...
+# #############################################################################
+
+# #############################################################################
+# Add values to entry's attribute, if necessary create attribute too.
+#
+# Input: #1 name of required attribute to add to
+#        #2 value or arrayref of values
+#        #3 option sub-type attribute
+#
+# Output: count of added values (retrieved from attribute->add method)
+#
+# It will refuse create attribute, if you will not pass any value.
+#
+# Error code is set by attribute->add() method or by entry->addAttr depending
+# which one will return error!=LDAP_SUCESS, if any. This method allows
+# setting values of readOnly attributes eg. objectClass but only when
+# THIS method created that attribute. This is necessary for searchResult's
+# method nextEntry ... and it's fine for me when I'm creating new entry
+# from scratch in memory before adding it to LDAP.
+
+sub addValues {
+  my $self = shift;
+  my $attrName = lc shift;
+  my $values = shift;
+  my $subType = shift;
+
+  my $attr = $self->attr($attrName);
+  my $attrIsNew = 0;
+
+  $self->error(LDAP_SUCCESS);
+
+  return 0 if (!defined($values));
+
+  if (!defined($attr)) {
+    my $class;
+
+    if (defined($self->attrMap->{$attrName})) {
+      $class = $self->attrMap->{$attrName};
+    } else {
+      $class = myPerlLDAP::attribute::classNamePrefix().$attrName;
+      if (eval "require $class" ) {
+      } else {
+	if (($myPerlLDAP::attribute::_D) and ($attrName ne "")) {
+	  carp("Can't load module \"$class\" attribute \"$attrName\" created as \"myPerlLDAP::attribute\"");
+	};
+	$class = 'myPerlLDAP::attribute';
+      };
+    };
+
+    $attr = $class->new($attrName);
+    $attr->owner($self);
+    $attrIsNew = 1;
+  };
+
+  my $res = 0;
+  my $RO = $attr->readOnly;
+  if ($attrIsNew and $RO) {
+    $attr->readOnly(0);
+  };
+
+  $values = [$values] if (ref($values) ne 'ARRAY');
+
+  $res = $attr->add($values, $subType);
+  $self->error($attr->error);
+
+  if ($attrIsNew and $RO) {
+    $attr->readOnly(1);
+  };
+
+  if ($attrIsNew) {
+    my $oldError = $self->error;
+    $self->addAttr($attr);
+    $self->error($oldError) if ($self->error==LDAP_SUCCESS);
+  };
+
+  return $res;
+}; # addValues ----------------------------------------------------------------
+
+sub makeAddRecord {
+  my $self = shift;
+  my %rec;
+
+  my $attr;
+  foreach $attr ($self->attrList) {
+    if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
+      #$rec{$attr}->{ab}=$self->attr($attr)->get;
+      %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('ab')});
+    }; # else: Attribute which have no value doesn't exists.
+  };
+
+  return \%rec;
 };
 
 sub clearModifiedFlags {
@@ -139,178 +424,10 @@ sub clearModifiedFlags {
   $self->attrInit({});
 
   my $attr;
-  foreach $attr ($self->attributesList) {
+  foreach $attr (@{$self->attrList}) {
     $self->attr($attr)->clearModifiedFlag;
     $self->attrInit->{$attr}=1;
   };
-};
-
-sub attributesList {
-  my $self = shift;
-
-  return @{$self->attrOrder};
-};
-
-sub attr {
-  my $self = shift;
-  my $attr = lc shift;
-
-  return $self->attrData->{$attr};
-};
-
-sub LDIF {
-  my $self = shift;
-
-  my ($attr, $value);
-  my (@out);
-
-  # TODO: dn, objectclasses, potom ten prvni z dn (RDN)
-  push @out, ("dn: ".$self->dn);
-  foreach $attr ($self->attributesList) {
-    if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
-      push @out, @{$self->attr($attr)->LDIF};
-    }; # else: Attribute which have no value doesn't exists.
-  };
-
-  return \@out;
-};
-
-sub LDIFString {
-  my $self = shift;
-
-  return join("\n", @{$self->LDIF})."\n";
-};
-
-sub remove {
-  my $self = shift;
-  my $attr = lc shift;
-
-  if (!defined($attr)) {
-    if ($_D || $self->debug) {
-      carp("$self\->remove called without attr name");
-    };
-    return undef;
-  };
-
-  if ($self->attr($attr)) {
-    delete $self->attrData->{$attr};
-    push @{$self->attrChanges}, ("-$attr");
-    my @changes = grep(!/^$attr$/, @{$self->attrOrder});
-    $self->attrOrder(\@changes);
-    return 1;
-  } else {
-    if ($_D || $self->debug) {
-      carp("$self\->remove attempt to remove non existing attribute=\"$attr\"");
-    };
-    return undef;
-  };
-};
-
-sub add {
-  my $self = shift;
-  my $attr = shift;
-
-  if (!defined($attr)) {
-    if ($_D || $self->debug) {
-      carp("$self\->add called without attribute");
-    };
-    return undef;
-  };
-
-  if (defined($self->attr($attr->name))) {
-    if ($_D || $self->debug) {
-      carp("$self\->addAsValues attempt to add attribute which exists");
-    };
-    return undef;
-  };
-
-  $attr->owner($self);
-
-  push @{$self->attrOrder}, ($attr->name);
-  push @{$self->attrChanges}, ("+".$attr->name);
-  $self->attrData->{$attr->name}=$attr;
-  # object will be added to ATTR_ADDED so is useless to be marked as modified
-  # because it will be writen to an LDAP db completely again
-  $self->attrData->{$attr->name}->clearModifiedFlag;
-  return $self->attrData->{$attr->name};
-};
-
-sub addAsValues {
-  my $self = shift;
-  my $attr = shift;
-
-  if (!defined($attr) or (!defined($_[0]))) {
-    if ($_D || $self->debug) {
-      carp("$self\->addAsValues called without attribute name or value(s)");
-    };
-    return undef;
-  };
-
-  if (defined($self->attr($attr))) {
-    if ($_D || $self->debug) {
-      carp("$self\->addAsValues attempt to add attribute which exists");
-    };
-    return undef;
-  };
-
-  my ($values); # This will be array ref of value(s) passed by user
-                # to this method
-  # Examine if first arg is one value (scalar) or multiple values (array ref)
-  if (ref($_[0]) eq "ARRAY") {
-    $values = shift;
-  } else {
-    my @v;
-    $v[0] = shift;
-    $values = \@v;
-  };
-  my $type = shift;
-
-  my $class;
-
-  if (defined($self->attrMap->{$attr})) {
-    $class = $self->attrMap->{$attr};
-  } else {
-    $class = myPerlLDAP::attribute::classNamePrefix().$attr;
-    if (eval "require $class" ) {
-    } else {
-      if (($myPerlLDAP::attribute::_D) and ($attr ne "")) {
-	carp("Can't load module \"$class\" attribute \"$attr\" created as \"myPerlLDAP::attribute\"");
-      };
-      $class = 'myPerlLDAP::attribute';
-    };
-  };
-
-  # Create and add new attribute
-  my $new_attr = $class->new($attr);
-  $new_attr->owner($self);
-  my $RO = $new_attr->readOnly;
-  $new_attr->readOnly=0 if $RO;
-
-  if ($new_attr) {
-    if ($new_attr->set($values, $type)) {
-      $new_attr->readOnly=1 if $RO;
-      return $self->add($new_attr);
-    };
-  };
-
-  $new_attr->readOnly=1 if $RO;
-
-  return;
-};
-
-sub makeAddRecord {
-  my $self = shift;
-  my %rec;
-
-  my $attr;
-  foreach $attr ($self->attributesList) {
-    if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
-      #$rec{$attr}->{ab}=$self->attr($attr)->get;
-      %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('ab')});
-    }; # else: Attribute which have no value doesn't exists.
-  };
-
-  return \%rec;
 };
 
 sub makeModificationRecord {
@@ -373,7 +490,7 @@ sub makeModificationRecord {
 #    $rec{$attr}->{rb}=$self->attr($attr)->get;
 #  };
 
-  foreach $attr ($self->attributesList) {
+  foreach $attr ($self->attrList) {
     if (($self->attr($attr)->getModifiedFlag()) and (!defined($rec{$attr}))) {
       # TODO: This is nasty. I'm replacing whole attribute, but now
       # I don't have much time ... to do better implementation I will
@@ -388,29 +505,5 @@ sub makeModificationRecord {
   return \%rec;
 };
 
-sub XML {
-  my $self = shift;
-  my @ret;
-  my $attr;
-
-#  warn quote4XML("1 2 3");
-
-  push @ret, "<dsml:entry dn=\"".quote4XML($self->dn)."\" urldn=\"".quote4XML(quote4HTTP($self->dn))."\" xmlns:dsml=\"http://www.dsml.org/DSML\">";
-  foreach $attr ($self->attributesList) {
-    push @ret, map { "  $_"} @{$self->attr($attr)->XML};
-  };
-  push @ret, "</dsml:entry>";
-
-  return \@ret;
-};
-
-sub XMLString {
-  my $self = shift;
-  my $ident = shift;
-
-  $ident = "" unless $ident;
-
-  return join("\n", map { "$ident$_" } @{$self->XML})."\n";
-};
 
 1;

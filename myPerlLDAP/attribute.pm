@@ -25,6 +25,7 @@ package myPerlLDAP::attribute;
 use strict;
 
 use Carp;
+use perlOpenLDAP::API qw(LDAP_SUCCESS);
 use vars qw($_D $AUTOLOAD %fields);
 
 # Debug levels:
@@ -47,6 +48,7 @@ $_D = 1;
            modified      => undef,
            name          => undef,
 	   owner         => undef,
+	   error         => LDAP_SUCCESS, #DELETE
 	  );
 
 =head1 NAME
@@ -193,8 +195,9 @@ sub add {
   foreach my $value (@$values) {
     if ($self->has($value,$type)) {
       if ($_D || $self->debug) {
-	carp("$self\->add() same value=\"$value\" passed to attribute");
+	#carp("$self\->add() same value=\"$value\" passed to attribute");
       };
+      return 0;
     } else {
       my @valElem = ($self->checkFixLength($value), $type);
       push @values, \@valElem;
@@ -271,7 +274,7 @@ sub remove {
   };
 
   return $count;
-}; # remove
+}; # remove -------------------------------------------------------------------
 
 sub has {
   my $self = shift;
