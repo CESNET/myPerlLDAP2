@@ -1,0 +1,11 @@
+CVS/Entries$
+CVS/Repository$
+CVS/Root$
+.*.bak$
+.*~
+Makefile
+MakeFile.old
+^blib/
+^stuff/
+^pm_to_blib$
+.*\.\#
