@@ -3,14 +3,14 @@
 use lib qw(..);
 
 use strict;
-use myPerlLDAP::Conn;
-use myPerlLDAP::Attribute;
+use myPerlLDAP::conn;
+use myPerlLDAP::attribute;
 use Mozilla::OpenLDAP::API qw(LDAP_PORT LDAP_SCOPE_BASE);
 
 use vars qw($VERSION);
 $VERSION = "0.2.2";
 
-$myPerlLDAP::Attribute::_D=0;
+$myPerlLDAP::attribute::_D=0;
 
 my %tree; # This is global variable =?> Am I dirty programmer? :))
 
@@ -31,45 +31,45 @@ my $match_SIGNLEV   = qw /SINGLE-VALUE/;
 my $match_READONLY  = qw /NO-USER-MODIFICATION/;
 
 my $superclasses = {
-		    '1.3.6.1.4.1.1466.115.121.1.3'   => '_AttributeTypeDescription',
-		    '1.3.6.1.4.1.1466.115.121.1.4'   => '_Audio',
-		    '1.3.6.1.4.1.1466.115.121.1.5'   => '_Binary',
-		    '1.3.6.1.4.1.1466.115.121.1.6'   => '_BinString',
-		    '1.3.6.1.4.1.1466.115.121.1.8'   => '_Certificate',
-		    '1.3.6.1.4.1.1466.115.121.1.9'   => '_CertificateList',
-		    '1.3.6.1.4.1.1466.115.121.1.10'  => '_CertificatePair',
+		    '1.3.6.1.4.1.1466.115.121.1.3'   => '_attributeTypeDescription',
+		    '1.3.6.1.4.1.1466.115.121.1.4'   => '_audio',
+		    '1.3.6.1.4.1.1466.115.121.1.5'   => '_binary',
+		    '1.3.6.1.4.1.1466.115.121.1.6'   => '_binString',
+		    '1.3.6.1.4.1.1466.115.121.1.8'   => '_certificate',
+		    '1.3.6.1.4.1.1466.115.121.1.9'   => '_certificateList',
+		    '1.3.6.1.4.1.1466.115.121.1.10'  => '_certificatePair',
 		    '1.3.6.1.4.1.1466.115.121.1.12'  => '_DN',
-		    '1.3.6.1.4.1.1466.115.121.1.13'  => '_DataQualitySyntax',
-		    '1.3.6.1.4.1.1466.115.121.1.14'  => '_DeliveryMethod',
-		    '1.3.6.1.4.1.1466.115.121.1.15'  => '_DirectoryString',
+		    '1.3.6.1.4.1.1466.115.121.1.13'  => '_dataQualitySyntax',
+		    '1.3.6.1.4.1.1466.115.121.1.14'  => '_deliveryMethod',
+		    '1.3.6.1.4.1.1466.115.121.1.15'  => '_directoryString',
 		    '1.3.6.1.4.1.1466.115.121.1.16'  => '_DITContentRuleDescription',
 		    '1.3.6.1.4.1.1466.115.121.1.17'  => '_DITStructureRuleDescription',
 		    '1.3.6.1.4.1.1466.115.121.1.19'  => '_DSAQualitySyntax',
-		    '1.3.6.1.4.1.1466.115.121.1.21'  => '_EnhancedGuide',
-		    '1.3.6.1.4.1.1466.115.121.1.22'  => '_FacsimileTelephoneNumber',
-		    '1.3.6.1.4.1.1466.115.121.1.23'  => '_Fax',
-		    '1.3.6.1.4.1.1466.115.121.1.24'  => '_GeneralizedTime',
-		    '1.3.6.1.4.1.1466.115.121.1.25'  => '_Guide',
+		    '1.3.6.1.4.1.1466.115.121.1.21'  => '_enhancedGuide',
+		    '1.3.6.1.4.1.1466.115.121.1.22'  => '_facsimileTelephoneNumber',
+		    '1.3.6.1.4.1.1466.115.121.1.23'  => '_fax',
+		    '1.3.6.1.4.1.1466.115.121.1.24'  => '_generalizedTime',
+		    '1.3.6.1.4.1.1466.115.121.1.25'  => '_guide',
 		    '1.3.6.1.4.1.1466.115.121.1.26'  => '_IA5String',
-		    '1.3.6.1.4.1.1466.115.121.1.27'  => '_Integer',
+		    '1.3.6.1.4.1.1466.115.121.1.27'  => '_integer',
 		    '1.3.6.1.4.1.1466.115.121.1.28'  => '_JPEG',
-		    '1.3.6.1.4.1.1466.115.121.1.30'  => '_MatchingRuleDescription',
-		    '1.3.6.1.4.1.1466.115.121.1.31'  => '_MatchingRuleUseDescription',
-		    '1.3.6.1.4.1.1466.115.121.1.34'  => '_NameAndOptionalUID',
-		    '1.3.6.1.4.1.1466.115.121.1.35'  => '_NameFormDescription',
-		    '1.3.6.1.4.1.1466.115.121.1.36'  => '_NumericString',
-		    '1.3.6.1.4.1.1466.115.121.1.37'  => '_ObjectClassDescription',
+		    '1.3.6.1.4.1.1466.115.121.1.30'  => '_matchingRuleDescription',
+		    '1.3.6.1.4.1.1466.115.121.1.31'  => '_matchingRuleUseDescription',
+		    '1.3.6.1.4.1.1466.115.121.1.34'  => '_nameAndOptionalUID',
+		    '1.3.6.1.4.1.1466.115.121.1.35'  => '_nameFormDescription',
+		    '1.3.6.1.4.1.1466.115.121.1.36'  => '_numericString',
+		    '1.3.6.1.4.1.1466.115.121.1.37'  => '_objectClassDescription',
 		    '1.3.6.1.4.1.1466.115.121.1.38'  => '_OID',
-		    '1.3.6.1.4.1.1466.115.121.1.39'  => '_OtherMailbox',
-		    '1.3.6.1.4.1.1466.115.121.1.40'  => '_OctetString',
-		    '1.3.6.1.4.1.1466.115.121.1.41'  => '_PostalAddress',
-		    '1.3.6.1.4.1.1466.115.121.1.42'  => '_ProtocolInformation',
-		    '1.3.6.1.4.1.1466.115.121.1.43'  => '_PresentationAddress',
-		    '1.3.6.1.4.1.1466.115.121.1.44'  => '_ProtocolInformation',
-		    '1.3.6.1.4.1.1466.115.121.1.49'  => '_SupportedAlgorithm',
-		    '1.3.6.1.4.1.1466.115.121.1.50'  => '_TelephoneNumber',
-		    '1.3.6.1.4.1.1466.115.121.1.51'  => '_TeletexTerminalIdentifier',
-		    '1.3.6.1.4.1.1466.115.121.1.52'  => '_TeletexNumber',
+		    '1.3.6.1.4.1.1466.115.121.1.39'  => '_otherMailbox',
+		    '1.3.6.1.4.1.1466.115.121.1.40'  => '_octetString',
+		    '1.3.6.1.4.1.1466.115.121.1.41'  => '_postalAddress',
+		    '1.3.6.1.4.1.1466.115.121.1.42'  => '_protocolInformation',
+		    '1.3.6.1.4.1.1466.115.121.1.43'  => '_presentationAddress',
+		    '1.3.6.1.4.1.1466.115.121.1.44'  => '_protocolInformation',
+		    '1.3.6.1.4.1.1466.115.121.1.49'  => '_supportedAlgorithm',
+		    '1.3.6.1.4.1.1466.115.121.1.50'  => '_telephoneNumber',
+		    '1.3.6.1.4.1.1466.115.121.1.51'  => '_teletexTerminalIdentifier',
+		    '1.3.6.1.4.1.1466.115.121.1.52'  => '_teletexNumber',
 		    '1.3.6.1.4.1.1466.115.121.1.53'  => '_UTCTime',
 		    '1.3.6.1.4.1.1466.115.121.1.54'  => '_LDAPSyntaxDescription',
 		   };
@@ -177,7 +177,7 @@ sub printAttributeHash {
 
 my $originalDir = `pwd`; chomp($originalDir);
 my $autoClassesPath = ".auto";
-my $attrClassesPath = "myPerlLDAP/Attribute";
+my $attrClassesPath = "myPerlLDAP/attribute";
 
 sub attributeHash2Class {
   my($attr) = @_;
@@ -207,9 +207,9 @@ sub attributeHash2Class {
   };
 
   if (defined($syntax)) {
-    $superclass="myPerlLDAP::Attribute::$superclasses->{$syntax}";
+    $superclass="myPerlLDAP::attribute::$superclasses->{$syntax}";
   } elsif ((!defined($syntax)) or ()) {
-    $superclass="myPerlLDAP::Attribute::$attr->{sup}";
+    $superclass="myPerlLDAP::attribute::$attr->{sup}";
   } else {
     warn "This should never happen. Coding error! Please report conditions.";
     return 0;
@@ -263,7 +263,7 @@ $classHash
 # buildClasses.pl is part of the myPerlLDAP package developed 
 # at CESNET (http://www.cesnet.cz/) by Jan Tomasek <jan\@tomasek.cz>.
 
-package myPerlLDAP::Attribute::$name;
+package myPerlLDAP::attribute::$name;
 
 use strict;
 use $superclass;

@@ -27,7 +27,6 @@ $_D = 1;
            readOnly      => 0,     # By default modifyable?
            debug         => $_D,
            modified      => undef,
-           values        => undef,
            name          => undef,
 	  );
 
@@ -51,7 +50,7 @@ sub new {
   if (eval "require myPerlLDAP::attribute::$requestedClass" ) {
     $class = "myPerlLDAP::attribute::$requestedClass";
   } else {
-    if ($_D) {
+    if (($_D) and ($requestedClass ne "")) {
       carp("Can't load module \"myPerlLDAP::attribute::$requestedClass\" attribute \"$requestedClass\" created as \"$class\"");
     };
   };
@@ -129,48 +128,14 @@ sub count {
 
 sub set {
   my $self = shift;
-
-  if ($self->readOnly) {
-    # This READ ONLY attribute we can't change it
-    if ($_D || $self->{_D}) {
-      carp("Attempt to change read-only object $self");
-    };
-    return undef;
-  };
-
-  if (!(scalar @_)) {
-    # No value suplied
-    if ($_D || $self->{_D}) {
-      carp("$self\->set() called without any value");
-    };
-    return undef;
-  };
-
-  my (@values, $value, $values);
-  if (ref($_[0]) eq "ARRAY") {
-    $values = $_[0];
-  } else {
-    $values = \@_;
-  };
-
-  foreach $value (@$values) {
-    push @values, $self->checkFixLength($value);
-    if (($self->singleValue) and (scalar @values)) {
-      # This attribute is only single value so we take only first
-      if ((@$values > 1) and ($_D || $self->{_D})) {
-	carp("more than one value passed to singe-value attribute $self");
-	goto ENDFOREACH;
-      };
-    };
-  };
- ENDFOREACH:
-  $self->{VALUES}=\@values;
-
-  $self->setModifiedFlag();
-
-  return $self->{VALUES};
+  # This is fastest way how to code this function ;-)
+  $self->{VALUES} = undef;
+  return $self->add(@_);
 };
 
+# If possible adds new value(s), accepts two args:
+#  1. array ref or scalar - REQUIRED
+#  2. OPTIONAL type of values scalar only
 sub add {
   my $self = shift;
 
@@ -190,7 +155,22 @@ sub add {
     return undef;
   };
 
-  if (($self->singleValue) and (scalar @{$self->{VALUES}})) {
+  my (@values); # Here I put values which will be finally added to
+                # internal classes structures.
+  my ($values); # This will be array ref of value(s) passed by user
+                # to this method
+  # Examine if first arg is one value (scalar) or multiple values (array ref)
+  if (ref($_[0]) eq "ARRAY") {
+    $values = shift;
+  } else {
+    my @v;
+    $v[0] = shift;
+    $values = \@v;
+  };
+  # Subtype of values is optional
+  my $type = shift;
+
+  if (($self->singleValue) and (scalar @{$self->get($type)})) {
     # This attribute is only single value and value is set
     if ($_D || $self->debug) {
       carp("$self\->add() another value passed to single-value attribute");
@@ -198,30 +178,25 @@ sub add {
     return undef;
   };
 
-  my (@values, $value, $values);
-  if (ref($_[0]) eq "ARRAY") {
-    $values = $_[0];
-  } else {
-    $values = \@_;
-  };
-
-  foreach $value (@$values) {
-    if ($self->has($value)) {
+  foreach my $value (@$values) {
+    if ($self->has($value,$type)) {
       if ($_D || $self->debug) {
 	carp("$self\->add() same value=\"$value\" passed to attribute");
       };
     } else {
-      push @values, $self->checkFixLength($value);
-    };
-    if (($self->singleValue) and (scalar @values)) {
-      # This attribute is only single value so we take only first
-      if ((@$values > 1) and ($_D || $self->debug)) {
-	carp("more than one value passed to singe-value attribute $self");
-	goto ENDFOREACH;
-      };
+      my @valElem = ($self->checkFixLength($value), $type);
+      push @values, \@valElem;
     };
   };
  ENDFOREACH:
+
+  if (($self->singleValue) and (scalar @values)) {
+    # This attribute is only single value so we take only first
+    if (((scalar @$values) > 1) and ($_D || $self->debug)) {
+      carp("more than one value passed to singe-value attribute $self");
+    };
+    @values = splice(@values, 2);
+  };
 
   push @{$self->{VALUES}}, (@values);
 
@@ -230,7 +205,7 @@ sub add {
   return $self->{VALUES};
 };
 
-# Removes list of values from atribute, returns 
+# Removes list of values from atribute, returns
 sub remove {
   my $self = shift;
 
@@ -243,11 +218,15 @@ sub remove {
   };
 
   my ($v1, $v2, $values);
+  # Examine if first arg is one value (scalar) or multiple values (array ref)
   if (ref($_[0]) eq "ARRAY") {
-    $values = $_[0];
+    $values = shift;
   } else {
-    $values = \@_;
+    my @v;
+    $v[0] = shift;
+    $values = \@v;
   };
+  my $t1 = shift;
 
   my $count = 0;
   if (defined($values)) {
@@ -255,8 +234,8 @@ sub remove {
       my $j = 0;
       while ($j < @{$self->{VALUES}}) {
 	$v2 = $self->{VALUES}->[$j];
-        if ($self->compareValues($v1, $v2) == 0) {
-	  #print "$j: \"$v1\"=\"$v2\"\n";
+	my @v1 = ($v1,$t1);
+        if ($self->compareValues(\@v1, $v2)) {
 	  splice (@{$self->{VALUES}}, $j, 1);
 	  $count++;
 	} else {
@@ -268,7 +247,14 @@ sub remove {
     $self->{VALUES}=undef;
   };
 
-  $self->setModifiedFlag();
+  $self->setModifiedFlag() if ($count);
+
+  if ($count != (scalar @$values)) {
+    if ($_D || $self->debug) {
+      my $COUNT = scalar @$values;
+      carp("$self\->remove-d only $count of expectected $COUNT values");
+    };
+  };
 
   return $count;
 }; # remove
@@ -277,18 +263,22 @@ sub has {
   my $self = shift;
 
   my ($v1, $v2, $values);
+  # Examine if first arg is one value (scalar) or multiple values (array ref)
   if (ref($_[0]) eq "ARRAY") {
-    $values = $_[0];
+    $values = shift;
   } else {
-    $values = \@_;
+    my @v;
+    $v[0] = shift;
+    $values = \@v;
   };
+  my $t1 = shift;
 
   my $count = 0;
   if (defined($values)) {
     foreach $v1 (@$values) {
       foreach $v2 (@{$self->{VALUES}}) {
-        if ($self->compareValues($v1, $v2) == 0) {
-	  #print "$j: \"$v1\"=\"$v2\"\n";
+	my @v1 = ($v1, $t1);
+        if ($self->compareValues(\@v1, $v2)) {
 	  $count++;
 	};
       };
@@ -305,23 +295,61 @@ sub has {
 
 sub get {
   my $self = shift;
+  my $type = shift; $type = "" unless $type;
+  my @values;
 
-  return $self->{VALUES};
+  foreach my $value (@{$self->{VALUES}}) {
+    my ($v,$t) = @$value;
+    $t = "" unless $t;
+    if ($t eq $type) {
+      push @values, ($v);
+    };
+  };
+
+  return \@values;
 }; # get
+
+sub types {
+  my $self = shift;
+  my %types;
+  my @types;
+  my $undef_type = 0;
+
+  foreach my $value (@{$self->{VALUES}}) {
+    my ($v,$t) = @$value;
+
+    if (defined($t)) {
+      $types{$t} = 1;
+    } elsif (!$undef_type) {
+      $undef_type = 1;
+    };
+  };
+
+  @types = (sort keys %types);
+  if ($undef_type) {
+    unshift @types, (undef);
+  };
+
+  return \@types;
+};
 
 # TODO: Make it work corectly with matchingrules
 sub compareValues {
   my $self = shift;
-  my $v1 = lc shift;
-  my $v2 = lc shift;
+  my $v1 = shift;
+  my $v2 = shift;
 
-  if ($v1 eq $v2) {
-    #print "$v1 ? $v2\n";
-    return 0;
-  } elsif ($v1 gt $v2) {
+  my $t1 = lc $v1->[1]; $t1 = "" unless $t1;
+     $v1 = lc $v1->[0];
+  my $t2 = lc $v2->[1]; $t2 = "" unless $t2;
+     $v2 = lc $v2->[0];
+
+  if (($v1 eq $v2) and ($t1 eq $t2)) {
+    #print "1: $v1;$t1 ? $v2;$t2\n";
     return 1;
   } else {
-    return -1;
+    #print "0: $v1;$t1 ? $v2;$t2\n";
+    return 0;
   };
 };
 
@@ -375,14 +403,18 @@ sub XML {
 
   if ($self->name eq 'objectclass') {
     push @ret, '<dsml:objectclass>';
-    foreach $value (@{$self->get()}) {
+    foreach $value (@{$self->get}) {
       push @ret, "  <dsml:oc-value>$value</dsml:oc-value>";
     };
     push @ret, '</dsml:objectclass>';
   } else {
     push @ret, "<dsml:attr name=\"".$self->name."\">";
-    foreach $value (@{$self->get()}) {
-      push @ret, "  <dsml:value>$value</dsml:value>";
+    foreach my $type (@{$self->types}) {
+      foreach $value (@{$self->get($type)}) {
+	my $TYPE = "";
+	$TYPE = " type=\"$type\"" if ($type);
+	push @ret, "  <dsml:value$TYPE>$value</dsml:value>";
+      };
     };
     push @ret, "</dsml:attr name=\"".$self->name."\">";
   };
