@@ -1,7 +1,19 @@
+2004-06-17  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.85
+	* myPerlLDAP/searchResult.pm, myPerlLDAP/conn.pm: Update for ACL
+	  with anonymous sessions (ACL can't be retreived). SearchResults
+	  needs owner=conn set because it is expected to set for each
+	  entry it returns.
+	* t/20-add.t, t/30-update.t, t/C.pm: New tests for new functions.
+	* myPerlLDAP/entry.pm: Updated for incremental attribute values update.
+	* myPerlLDAP/conn.pm: Debug output when entry update fails.
+	* myPerlLDAP/attribute.pm: Updates for incremental changes of
+	  attribute values. Older versions were always rewriting complete
+	  entry value.
+
 2004-05-19  Jan Tomasek  <jan@tomasek.cz>
 	* Version: 1.84
 	* myPerlLDAP/conn.pm, myPerlLDAP/searchResult.pm:
-	searchResults needs owner=conn set because it is expected to set for each entry it returns.
 
 2004-05-19  Jan Tomasek  <jan@tomasek.cz>
 	* Version: 1.83
