@@ -106,13 +106,13 @@ sub clearModifiedFlags {
   $self->attrInit({});
 
   my $attr;
-  foreach $attr ($self->getAttributesList) {
+  foreach $attr ($self->attributesList) {
     $self->attr($attr)->clearModifiedFlag;
     $self->attrInit->{$attr}=1;
   };
 };
 
-sub getAttributesList {
+sub attributesList {
   my $self = shift;
 
   return @{$self->attrOrder};
@@ -125,7 +125,7 @@ sub attr {
   return $self->attrData->{$attr};
 };
 
-sub getLDIF {
+sub LDIF {
   my $self = shift;
 
   my ($attr, $value);
@@ -133,7 +133,7 @@ sub getLDIF {
 
   # TODO: dn, objectclasses, potom ten prvni z dn (RDN)
   push @out, ("dn: ".$self->dn);
-  foreach $attr ($self->getAttributesList) {
+  foreach $attr ($self->attributesList) {
     if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
       foreach $value (@{$self->attr($attr)->get}) {
 	push @out, ("$attr: $value");
@@ -144,25 +144,11 @@ sub getLDIF {
   return \@out;
 };
 
-sub getLDIF_String {
+sub LDIFString {
   my $self = shift;
 
-  return join("\n", @{$self->getLDIF})."\n";
+  return join("\n", @{$self->LDIF})."\n";
 };
-
-
-#sub getDN {
-#  my $self = shift;
-
-#  return $self->{DN};
-#};
-
-## TODO: How about renaming?
-#sub setDN {
-#  my $self = shift;
-
-#  $self->{DN}=shift;
-#};
 
 sub remove {
   my $self = shift;
@@ -256,7 +242,7 @@ sub makeAddRecord {
   my %rec;
 
   my $attr;
-  foreach $attr ($self->getAttributesList) {
+  foreach $attr ($self->attributesList) {
     if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
       $rec{$attr}->{ab}=$self->attr($attr)->get;
     }; # else: Attribute which have no value doesn't exists.
@@ -329,7 +315,7 @@ sub makeModificationRecord {
     $rec{$attr}->{rb}=$self->attr($attr)->get;
   };
 
-  foreach $attr ($self->getAttributesList) {
+  foreach $attr ($self->attributesList) {
     if (($self->attr($attr)->getModifiedFlag()) and (!defined($rec{$attr}))) {
 
 #      print "rec: $attr<BR>";
@@ -345,27 +331,27 @@ sub makeModificationRecord {
   return \%rec;
 };
 
-sub getXML {
+sub XML {
   my $self = shift;
   my @ret;
   my $attr;
 
   push @ret, "<dsml:entry dn=\"".$self->dn."\">";
-  foreach $attr ($self->getAttributesList) {
-    push @ret, map { "  $_"} @{$self->attr($attr)->getXML};
+  foreach $attr ($self->attributesList) {
+    push @ret, map { "  $_"} @{$self->attr($attr)->XML};
   };
   push @ret, "</dsml:entry>";
 
   return \@ret;
 };
 
-sub getXML_String {
+sub XMLString {
   my $self = shift;
   my $ident = shift;
 
   $ident = "" unless $ident;
 
-  return join("\n", map { "$ident$_" } @{$self->getXML})."\n";
+  return join("\n", map { "$ident$_" } @{$self->XML})."\n";
 };
 
 1;
