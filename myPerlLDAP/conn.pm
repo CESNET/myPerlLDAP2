@@ -52,7 +52,7 @@ $VERSION = "1.51";
 %fields = (
 	   debug => 1,
 	   host => undef,
-	   port => LDAP_PORT,
+	   port => undef,
 	   bindDN => undef,
 	   bindPasswd => undef,
 	   certDB => undef,
@@ -137,10 +137,16 @@ sub init {
   my ($ret, $ld);
 
   if (defined($self->certDB) && ($self->certDB ne "")) {
-    $ret = ldapssl_client_init($self->certDB, 0);
-    return if ($ret < 0);
+    # function ldapssl_client_init is here only for compatibility with
+    # programs written for perlLDAP
+    #$ret = ldapssl_client_init($self->certDB, 0);
+    #return if ($ret < 0);
 
-    $ld = ldapssl_init($self->host, $self->port, 1);
+    # this way was working for OpenLDAP 2.0.6 or 2.0.7, it's not working
+    # any more
+    #$ld = ldapssl_init($self->host, $self->port, 1);
+
+    $ret = perlOpenLDAP::API::ldap_initialize($ld, 'ldaps://'.$self->host.':'.$self->port.'/');
   } else {
     $ld = ldap_init($self->host, $self->port);
   };

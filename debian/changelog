@@ -1,3 +1,9 @@
+libmyperlldap-perl (1.60-1) unstable; urgency=low
+
+  Fixed bug in SSL mode. 
+
+ -- Jan Tomasek <jan@tomasek.cz>  Mon, 22 Jul 2002 14:57:00 +0200
+
 libmyperlldap-perl (1.52-1) unstable; urgency=low
 
   myPerlLDAP::searchResult - fixed one forgotten call to renamed method add()
