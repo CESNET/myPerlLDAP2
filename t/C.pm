@@ -2,10 +2,10 @@
 package C;
 
 use strict;
-use Mozilla::OpenLDAP::API qw(LDAP_PORT LDAPS_PORT LDAP_SCOPE_SUBTREE);
+use perlOpenLDAP::API qw(LDAP_PORT LDAPS_PORT LDAP_SCOPE_SUBTREE);
 use vars qw ($LDAPServerHost $LDAPServerPort $SearchFilter $TestBase $BindDN $BindPasswd $TestRDN);
 
-$LDAPServerHost = 'localhost';
+$LDAPServerHost = 'tady.ten.cz';
 $LDAPServerPort = LDAP_PORT;
 $TestBase       = 'ou=People,o=test';
 $SearchFilter   = '(uid=*)';
