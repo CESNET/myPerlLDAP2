@@ -48,7 +48,7 @@ use vars qw($VERSION @ISA %fields);
 
 @ISA = ("myPerlLDAP::abstract");
 
-$VERSION = "1.51";
+$VERSION = "1.70";
 
 %fields = (
 	   debug => 1,
@@ -73,6 +73,14 @@ $VERSION = "1.51";
 # isn't now able to work with certs I think.
 
 sub new {
+  my $self = constructor(@_);
+
+  return unless $self;
+  return unless $self->init();
+  return $self;
+}; # new -------------------------------------------------------------------
+
+sub constructor {
   my $proto = shift;
   my $class = ref($proto) || $proto;
 
@@ -109,9 +117,8 @@ sub new {
     $self->port((($self->certDB ne "") ? LDAPS_PORT : LDAP_PORT));
   }
 
-  return unless $self->init();
   return $self;
-}; # new -------------------------------------------------------------------
+};
 
 #############################################################################
 # Destructor, makes sure we close any open LDAP connections.
@@ -137,6 +144,13 @@ sub DESTROY {
 # for OpenLDAP, and some other minor changes were done by me ... it will
 # not be merged back to constructor I like this way ;-)
 sub init {
+  my $self = shift;
+  my $ret = $self->connect(@_);
+
+  return (($ret == LDAP_SUCCESS) ? 1 : undef);
+} # init --------------------------------------------------------------------
+
+sub connect {
   my ($self) = shift;
   my ($ret, $ld);
 
@@ -159,8 +173,9 @@ sub init {
   $self->ld($ld);
   $ret = ldap_simple_bind_s($ld, $self->bindDN, $self->bindPasswd);
 
-  return (($ret == LDAP_SUCCESS) ? 1 : undef);
-} # init --------------------------------------------------------------------
+  return $ret;
+}
+
 
 #############################################################################
 # Create a new, empty, Entry object.
