@@ -2,13 +2,13 @@
 
 package myPerlLDAP::SearchResults;
 
-use Mozilla::OpenLDAP::API 1.4 qw(/.+/);
+use Mozilla::OpenLDAP::API 1.4 qw(ldap_first_entry ldap_next_entry ldap_msgfree ldap_get_dn ldap_first_attribute ldap_next_attribute ldap_get_values_len ldap_ber_free);
 use strict;
 use Carp;
 
 use vars qw($VERSION $_D);
 
-$VERSION = "0.0.1";
+$VERSION = "0.2.2";
 
 $_D = 1;
 
