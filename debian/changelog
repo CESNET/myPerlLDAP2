@@ -1,3 +1,21 @@
+libmyperlldap-perl (1.63-3) unstable; urgency=low
+
+  * Fixed 1.63-2
+
+ -- Jan Tomasek <jan@tomasek.cz>  Tue, 27 Aug 2002 11:17:45 +0200
+
+libmyperlldap-perl (1.63-2) unstable; urgency=low
+
+  * Fixed 1.63-1 
+
+ -- Jan Tomasek <jan@tomasek.cz>  Tue, 27 Aug 2002 11:15:50 +0200
+
+libmyperlldap-perl (1.63-1) unstable; urgency=low
+
+  * Updated to produce error message to stderr entry update fail
+
+ -- Jan Tomasek <jan@tomasek.cz>  Tue, 27 Aug 2002 11:12:40 +0200
+
 libmyperlldap-perl (1.62-4) unstable; urgency=low
 
   * libmyperlldap -> libmyperlldap-perl 

@@ -42,6 +42,7 @@ use myPerlLDAP::abstract;
 use myPerlLDAP::utils qw(str2Scope normalizeDN);
 use myPerlLDAP::entry;
 use myPerlLDAP::searchResult;
+use Data::Dumper;
 
 use vars qw($VERSION @ISA %fields);
 
@@ -457,8 +458,8 @@ sub update {
     $entry->clearModifiedFlags;
     return 1;
   } else {
-    print STDERR "Failed to update entry \"".$entry->dn."\"".
-    print STDERR Dumper($rec);
+    print STDERR "Failed to update entry \"".$entry->dn."\"\n".
+    print STDERR Dumper($rec)."\n";
     return undef;
   };
 }; # update -----------------------------------------------------------------
