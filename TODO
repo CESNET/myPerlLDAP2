@@ -1,5 +1,9 @@
-* More info in README
-* Licence
-* Dokumentace :(
-* Prace se subtypy
-* Inteligentnejsi ukladani atributu (ne to cely prepsat)
+23.06.2002 - Jan Tomasek <jan@tomasek.cz>
+  myPerlLDAP::conn::compare should be able to work with subtypes
+
+xx.xx.2001 - Jan Tomasek <jan@tomasek.cz>
+  More info in README
+  Licence
+  Dokumentace :(
+  Prace se subtypy
+  Inteligentnejsi ukladani atributu (ne to cely prepsat)
