@@ -29,6 +29,8 @@ use perlOpenLDAP::API qw(LDAP_SUCCESS LDAP_CONSTRAINT_VIOLATION
 			 LDAP_TYPE_OR_VALUE_EXISTS LDAP_NO_SUCH_OBJECT);
 use myPerlLDAP::attribute;
 use myPerlLDAP::utils qw(quote4XML quote4HTTP);
+use Storable qw(dclone);
+use Data::Dumper;
 use vars qw($AUTOLOAD @ISA %fields);
 
 @ISA = ("myPerlLDAP::abstract");
@@ -51,7 +53,9 @@ use vars qw($AUTOLOAD @ISA %fields);
 	   debug         => 1,
 	   modified      => undef,
 	   name          => undef,
-	   owner         => undef
+	   owner         => undef,
+	   sortingEnabled=> undef,
+	   _sorted       => 1,
 	  );
 
 =head1 NAME
@@ -162,6 +166,8 @@ sub clearValues {
 
   $self->{VALUES} = undef;
   $self->setModifiedFlag();
+  $self->{_cleared} = 1;
+  $self->{_sorted} = 1;
 };
 
 # #############################################################################
@@ -220,8 +226,12 @@ sub addValues {
     return 0;
   };
 
-  # This attribute is only single value and value is set
-  if (($self->singleValue) and (scalar @{$self->getValues($type)})) {
+  # This attribute is only single value and value is set if
+  # (($self->singleValue) and (scalar @{$self->getValues($type)})) {
+  # 18.05.2004 Semik: I'm not sure if this is realy needed, but I'm
+  # sure it causes multiple sorting, which is done throught getValues
+  # function so removed.
+  if (($self->singleValue) and ($self->count)) {
     carp(ref($self)."\->add() another value passed to single-value attribute")
       if ($self->debug);
     $self->error(LDAP_CONSTRAINT_VIOLATION);
@@ -247,6 +257,7 @@ sub addValues {
 
   if ($addCounter) {
     push @{$self->{VALUES}}, (@values);
+    $self->{_sorted} = 0;
     $self->setModifiedFlag();
   };
 
@@ -307,6 +318,8 @@ sub getValues {
   my $self = shift;
   my $type = shift; $type = "" unless $type;
   my @values;
+
+  $self->sortValues unless ($self->{_sorted});
 
   foreach my $value (@{$self->{VALUES}}) {
     my ($v,$t) = @$value;
@@ -451,6 +464,7 @@ sub clearModifiedFlag {
   my $self = shift;
 
   $self->modified(undef);
+  $self->{_VALUES} = dclone($self->{VALUES});
 };
 
 sub makeModificationRecord {
@@ -458,13 +472,73 @@ sub makeModificationRecord {
   my $mode = shift;
   my %res;
 
-  foreach my $type (@{$self->types}) {
-    my $TYPE = "";
-    $TYPE = ";$type" if ($type);
-    if ($res{$self->name."$TYPE"}->{$mode}) {
+  sub addValues2res {
+    my $res    = shift;
+    my $attr   = shift;
+    my $mode   = shift;
+    my $values = shift;
+
+    if ((scalar @{$values} == 1) and ($values->[0] eq '')) {
     } else {
-      $res{$self->name."$TYPE"}->{$mode} = $self->getValues($type);
+      $res->{$attr}->{$mode} = [] if (!defined($res->{$attr}->{$mode}));
+      push @{$res->{$attr}->{$mode}}, @{$values};
     };
+  };
+
+  # Posible modes
+  #   ab: add values to attribute
+  #   db: delete values from attribute
+  #   rb: replace all existing values of attribute with new one
+  if ($mode eq 'ab') {
+    foreach my $type (@{$self->types}) {
+      my $attr = $self->name;
+      $attr = "$attr;$type" if ($type);
+      # TODO: 18.05.2004 Access $self->{VALUES} rather directly this
+      # is causing not necesary sorting when enabled
+      addValues2res(\%res, $attr, 'ab', $self->getValues($type));
+    };
+  } elsif (defined($self->{_cleared})) {
+    warn "$self->makeModificationRecord: Replace mode";
+    foreach my $val (@{$self->{VALUES}}) {
+      my $attr = $self->name;
+      $attr = "$attr;$val->[1]" if ($val->[1]);
+      addValues2res(\%res, $attr, 'rb', [$val->[0]]);
+    };
+  } else {
+    # Values to be deleted (_VALUES - VALUES)
+    foreach my $_val (@{$self->{_VALUES}}) {
+      my $m = 1;
+      foreach my $val (@{$self->{VALUES}}) {
+	my $_t = $_val->[1] || '';
+	my $t = $val->[1] || '';
+	$m = 0 if (($_val->[0] eq $val->[0]) and ($_t eq $t));
+      };
+      if ($m) {
+        my $attr = $self->name;
+	$attr = "$attr;$_val->[1]" if ($_val->[1]);
+        #$res{$attr}->{db} = $_val->[0];
+	addValues2res(\%res, $attr, 'db', [$_val->[0]]);
+      };
+    };
+    # Values to be added (VALUES - _VALUES)
+    foreach my $_val (@{$self->{VALUES}}) {
+      my $m = 1;
+      foreach my $val (@{$self->{_VALUES}}) {
+	my $_t = $_val->[1] || '';
+	my $t = $val->[1] || '';
+	$m = 0 if (($_val->[0] eq $val->[0]) and ($_t eq $t));
+      };
+      if ($m) {
+	my $attr = $self->name;
+	$attr = "$attr;$_val->[1]" if ($_val->[1]);
+	#$res{$attr}->{ab} = $_val->[0];
+	addValues2res(\%res, $attr, 'ab', [$_val->[0]]);
+      };
+    };
+#     warn Dumper("NAME", $self->name,
+# 		"CLEARED", $self->{_cleared},
+# 		"_VALUES", $self->{_VALUES},
+# 		"VALUES",  $self->{VALUES});
   };
 
   return \%res;
@@ -545,4 +619,28 @@ sub LDIF {
   return \@ret;
 };
 
-1;
+sub sortValues {
+  my $self = shift;
+
+  return 1 unless $self->sortingEnabled;
+
+  $self->sortValuesInit;
+
+  $self->_sortValues;
+
+  $self->sortValuesDone;
+  $self->{_sorted} = 1;
+};
+
+sub _sortValues {
+};
+
+sub sortValuesInit {
+  my $self = shift;
+  $self->{_SV} = {};
+};
+
+sub sortValuesDone {
+  my $self = shift;
+  delete $self->{_SV};
+};
