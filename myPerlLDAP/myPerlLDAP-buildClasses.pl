@@ -275,9 +275,7 @@ package myPerlLDAP::attribute::$name;
 
 use strict;
 use $superclass;
-use vars qw(\$VERSION \@ISA \%fields);
-
-\$VERSION = '$VERSION';
+use vars qw(\@ISA \%fields);
 
 \@ISA = ('$superclass');
 
@@ -446,7 +444,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     'NAME'          => 'myPerlLDAP::attribute',
-    'VERSION'       => '$VERSION',
+    'VERSION'       => '".$myPerlLDAP::conn::VERSION."',
     'AUTHOR'        => 'Jan Tomasek <jan\@tomasek.cz>',
     'DISTNAME'      => 'myPerlLDAP-auto-attributes',
     'PMLIBDIRS'     => ['attribute'],
