@@ -135,11 +135,9 @@ sub LDIF {
   push @out, ("dn: ".$self->dn);
   foreach $attr ($self->attributesList) {
     if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
-      foreach $value (@{$self->attr($attr)->get}) {
-	push @out, ("$attr: $value");
-      };
+      push @out, @{$self->attr($attr)->LDIF};
     }; # else: Attribute which have no value doesn't exists.
-   };
+  };
 
   return \@out;
 };
@@ -220,13 +218,34 @@ sub addAsValues {
     return undef;
   };
 
+  my ($values); # This will be array ref of value(s) passed by user
+                # to this method
+  # Examine if first arg is one value (scalar) or multiple values (array ref)
+  if (ref($_[0]) eq "ARRAY") {
+    $values = shift;
+  } else {
+    my @v;
+    $v[0] = shift;
+    $values = \@v;
+  };
+  my $type = shift;
+
+  my $class = myPerlLDAP::attribute::classNamePrefix().$attr;
+  if (eval "require $class" ) {
+  } else {
+    if (($myPerlLDAP::attribute::_D) and ($attr ne "")) {
+      carp("Can't load module \"$class\" attribute \"$attr\" created as \"myPerlLDAP::attribute\"");
+    };
+    $class = 'myPerlLDAP::attribute';
+  };
+
   # Create and add new attribute
-  my $new_attr = new myPerlLDAP::attribute($attr);
+  my $new_attr = $class->new($attr);
   my $RO = $new_attr->readOnly;
   $new_attr->readOnly=0 if $RO;
 
   if ($new_attr) {
-    if ($new_attr->set(@_)) {
+    if ($new_attr->set($values, $type)) {
       $new_attr->readOnly=1 if $RO;
       return $self->add($new_attr);
     };
@@ -244,7 +263,8 @@ sub makeAddRecord {
   my $attr;
   foreach $attr ($self->attributesList) {
     if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
-      $rec{$attr}->{ab}=$self->attr($attr)->get;
+      #$rec{$attr}->{ab}=$self->attr($attr)->get;
+      %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('ab')});
     }; # else: Attribute which have no value doesn't exists.
   };
 
@@ -277,8 +297,9 @@ sub makeModificationRecord {
       $attr = $1;
 
       if ($self->attrInit->{$attr}) {
-	# we can't add attribute which is in LDAP database, we have to overwrite
-	# it. This can happen if user first deletes attribute and then add it again.
+	# we can't add attribute which is in LDAP database, we have to
+	# overwrite it. This can happen if user first deletes attribute
+	# and then add it again.
 	$replace{$attr}=1;
 	delete $add{$attr} if (exists($add{$attr}));
 	delete $delete{$attr} if (exists($delete{$attr}));
@@ -294,36 +315,31 @@ sub makeModificationRecord {
   foreach $attr (keys %delete) {
     die "This should never happen" if (defined($rec{$attr}));
 
-#    print "delete: $attr<BR>";
-
     $rec{$attr}->{rb}=[];
   };
 
-  foreach $attr (keys %add) {
+  foreach $attr (keys %add, keys %replace) {
     die "This should never happen" if (defined($rec{$attr}));
 
-#    print "add: $attr<BR>";
-
-    $rec{$attr}->{rb}=$self->attr($attr)->get;
+    #$rec{$attr}->{rb}=$self->attr($attr)->get;
+    %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('rb')});
   };
 
-  foreach $attr (keys %replace) {
-    die "This should never happen" if (defined($rec{$attr}));
+#  foreach $attr (keys %replace) {
+#    die "This should never happen" if (defined($rec{$attr}));
 
-#    print "replace: $attr<BR>";
-
-    $rec{$attr}->{rb}=$self->attr($attr)->get;
-  };
+#    $rec{$attr}->{rb}=$self->attr($attr)->get;
+#  };
 
   foreach $attr ($self->attributesList) {
     if (($self->attr($attr)->getModifiedFlag()) and (!defined($rec{$attr}))) {
 
-#      print "rec: $attr<BR>";
       # TODO: This is nasty. I'm replacing whole attribute, but now
       # I don't have much time ... to do better implementation I will
       # need modify myPerlLDAP::attribute to be able produce modificaion
       # record for this.
-      $rec{$attr}->{rb}=$self->attr($attr)->get;
+      #$rec{$attr}->{rb}=$self->attr($attr)->get;
+      %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('rb')});
     };# else -> attribute was added as new and after that it was modified
       # I not process it here because it is being added as new attr ...
   };

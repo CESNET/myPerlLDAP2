@@ -47,14 +47,6 @@ sub new {
   my $class = ref($proto) || $proto;
   my $requestedClass = lc shift;
 
-  if (eval "require myPerlLDAP::attribute::$requestedClass" ) {
-    $class = "myPerlLDAP::attribute::$requestedClass";
-  } else {
-    if (($_D) and ($requestedClass ne "")) {
-      carp("Can't load module \"myPerlLDAP::attribute::$requestedClass\" attribute \"$requestedClass\" created as \"$class\"");
-    };
-  };
-
   my $self = bless {_permitted_fields => \%fields, %fields}, $class;
 
   $self->name($requestedClass);
@@ -387,6 +379,23 @@ sub clearModifiedFlag {
   $self->modified(undef);
 };
 
+sub makeModificationRecord {
+  my $self = shift;
+  my $mode = shift;
+  my %res;
+
+  foreach my $type (@{$self->types}) {
+    my $TYPE = "";
+    $TYPE = ";$type" if ($type);
+    if ($res{$self->name."$TYPE"}->{$mode}) {
+    } else {
+      $res{$self->name."$TYPE"}->{$mode} = $self->get($type);
+    };
+  };
+
+  return \%res;
+};
+
 sub className {
   my $self = shift;
 
@@ -395,6 +404,11 @@ sub className {
 
   return $name;
 };
+
+sub classNamePrefix {
+  return 'myPerlLDAP::attribute::';
+};
+
 
 sub XML {
   my $self = shift;
@@ -417,6 +431,22 @@ sub XML {
       };
     };
     push @ret, "</dsml:attr name=\"".$self->name."\">";
+  };
+
+  return \@ret;
+};
+
+sub LDIF {
+  my $self = shift;
+  my @ret;
+  my $value;
+
+  foreach my $type (@{$self->types}) {
+    foreach $value (@{$self->get($type)}) {
+      my $TYPE = "";
+      $TYPE = ";$type" if ($type);
+      push @ret, $self->name."$TYPE: $value";
+    };
   };
 
   return \@ret;
