@@ -55,7 +55,7 @@ myPerlLDAP/attribute/_teletexTerminalIdentifier.pm
 myPerlLDAP/conn.pm
 myPerlLDAP/entry.pm
 myPerlLDAP/myPerlLDAP-buildClasses.pl
-myPerlLDAP/searchResults.pm
+myPerlLDAP/searchResult.pm
 myPerlLDAP/utils.pm
 t/05-compile.t
 t/10-search.t

@@ -465,7 +465,7 @@ sub makeAddRecord {
   my %rec;
 
   my $attr;
-  foreach $attr ($self->attrList) {
+  foreach $attr (@{$self->attrList}) {
     if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
       #$rec{$attr}->{ab}=$self->attr($attr)->get;
       %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('ab')});
@@ -548,14 +548,15 @@ sub makeModificationRecord {
 #    $rec{$attr}->{rb}=$self->attr($attr)->get;
 #  };
 
-  foreach $attr ($self->attrList) {
-    if (($self->attr($attr)->getModifiedFlag()) and (!defined($rec{$attr}))) {
+  foreach my $attrName (@{$self->attrList}) {
+    if (($self->attr($attrName)->getModifiedFlag()) and
+	(!defined($rec{$attrName}))) {
       # TODO: This is nasty. I'm replacing whole attribute, but now
       # I don't have much time ... to do better implementation I will
       # need modify myPerlLDAP::attribute to be able produce modificaion
       # record for this.
       #$rec{$attr}->{rb}=$self->attr($attr)->get;
-      %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('rb')});
+      %rec = (%rec, %{$self->attr($attrName)->makeModificationRecord('rb')});
     };# else -> attribute was added as new and after that it was modified
       # I not process it here because it is being added as new attr ...
   };
