@@ -35,6 +35,7 @@ print "ok 3\n" if $SOK;
 $SOK = 1;
 my $entry = $res->nextEntry or $SOK = 0;
 while ($entry) {
+  my $dump = join("\n", @{$entry->XML});
   $entry = $res->nextEntry;
 };
 print "not ok 4\n" unless $SOK;

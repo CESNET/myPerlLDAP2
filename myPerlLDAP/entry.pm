@@ -6,6 +6,7 @@ use strict;
 use Carp;
 
 use myPerlLDAP::attribute;
+use myPerlLDAP::utils qw(quote4XML quote4HTTP);
 
 use vars qw($VERSION $_D $AUTOLOAD %fields);
 
@@ -32,7 +33,7 @@ $_D = 1;
 	   attrMap     => {},
 	  );
 
-sub new {
+ sub new {
   my $proto = shift;
   my $class = ref($proto) || $proto;
 
@@ -358,7 +359,9 @@ sub XML {
   my @ret;
   my $attr;
 
-  push @ret, "<dsml:entry dn=\"".$self->dn."\" xmlns:dsml=\"http://www.dsml.org/DSML\">";
+#  warn quote4XML("1 2 3");
+
+  push @ret, "<dsml:entry dn=\"".quote4XML($self->dn)."\" urldn=\"".quote4XML(quote4HTTP($self->dn))."\" xmlns:dsml=\"http://www.dsml.org/DSML\">";
   foreach $attr ($self->attributesList) {
     push @ret, map { "  $_"} @{$self->attr($attr)->XML};
   };
