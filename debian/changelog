@@ -1,3 +1,10 @@
+libmyperlldap-perl (1.64-1) unstable; urgency=low
+
+  * Fixed typo in myPerlLDAP::attribute::_attributeTypeDescription
+  * Housekeeping
+
+ -- Jan Tomasek <jan@tomasek.cz>  Thu,  5 Sep 2002 10:15:04 +0200
+
 libmyperlldap-perl (1.63-3) unstable; urgency=low
 
   * Fixed 1.63-2
@@ -126,6 +133,4 @@ libmyperlldap-perl (0.2.3-1) unstable; urgency=low
 
  -- Jan Tomasek <jan@tomasek.cz>  Wed, 13 Feb 2002 17:41:00 +0100
 
-Local variables:
-mode: debian-changelog
-End:
+
