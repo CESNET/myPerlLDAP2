@@ -1,3 +1,15 @@
+libmyperlldap-perl (1.00-2) unstable; urgency=low
+
+  * install to /usr/share... not /usr/local/share...
+
+ -- Jan Tomasek <jan@tomasek.cz>  Fri, 03 May 2002 12:03:00 +0200
+
+libmyperlldap-perl (1.00-1) unstable; urgency=low
+
+  * New upstream version, maybe "new mystream version" :))
+
+ -- Jan Tomasek <jan@tomasek.cz>  Fri, 03 May 2002 10:45:00 +0200
+
 libmyperlldap-perl (0.2.3-1) unstable; urgency=low
 
   * Initial Release.
