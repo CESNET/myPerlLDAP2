@@ -338,7 +338,7 @@ sub search {
 			    undef,
 			    undef, 0,
 			    defined($res) ? $res : 0)) {
-      my $sRes = new myPerlLDAP::searchResult($self->ld, $res);
+      my $sRes = new myPerlLDAP::searchResult($self->ld, $res, $self);
       $sRes->owner($self);
       return $sRes;
     } else {
@@ -368,7 +368,7 @@ sub read {
 		     defined(\@attrs) ? \@attrs : 0,
 		     0,
 		     defined($res) ? $res : 0)) {
-    my $sRes = new myPerlLDAP::searchResult($self->ld, $res);
+    my $sRes = new myPerlLDAP::searchResult($self->ld, $res, $self);
     if ($sRes) {
       my $entry = $sRes->nextEntry;
       return $entry;
