@@ -469,7 +469,7 @@ myPerLDAP::Conn - LDAP server connection object
 
   my $entry = $res->nextEntry;
   while ($entry) {
-    print $entry->getLDIF_String;
+    print $entry->LDIFString;
     print "\n";
 
     $entry = $res->nextEntry;

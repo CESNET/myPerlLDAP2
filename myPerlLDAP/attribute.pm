@@ -368,7 +368,7 @@ sub className {
   return $name;
 };
 
-sub getXML {
+sub XML {
   my $self = shift;
   my @ret;
   my $value;

@@ -31,7 +31,7 @@ $conn->delete("$C::TestRDN,$C::TestBase");
 # - 3 -----------------------------------------------------------------------
 $SOK = 1;
 my $entry = new myPerlLDAP::entry;
-$entry->setDN('uid=test,ou=People,o=test');
+$entry->dn('uid=test,ou=People,o=test');
 $entry->addAsValues('objectclass', 'top', 'person', 'inetOrgPerson', 'posixAccount');
 $entry->addAsValues('uid', 'test');
 $entry->addAsValues('sn', 'Testovic');

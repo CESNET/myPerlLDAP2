@@ -35,9 +35,6 @@ print "ok 3\n" if $SOK;
 $SOK = 1;
 my $entry = $res->nextEntry or $SOK = 0;
 while ($entry) {
-#  print $entry->getLDIF_String;
-#  print "\n";
-
   $entry = $res->nextEntry;
 };
 print "not ok 4\n" unless $SOK;
