@@ -10,20 +10,20 @@ $VERSION = "0.5.0";
 
 @ISA = ("myPerlLDAP::attribute");
 
-sub humanReadableForm {
-  my $self = shift;
-  my @val;
+#sub humanReadableForm {
+#  my $self = shift;
+#  my @val;
 
-  foreach my $val (@{$self->get(@_)}) {
-    $val =~ s/.*?=//;
-    $val =~ s/,.*//;
-    push @val, $val;
-  };
+#  foreach my $val (@{$self->get(@_)}) {
+#    $val =~ s/.*?=//;
+#    $val =~ s/,.*//;
+#    push @val, $val;
+#  };
 
-  # warn "ENTRY: ".$self->owner;
-  # warn "CONN: ".$self->owner->owner;
+#  # warn "ENTRY: ".$self->owner;
+#  # warn "CONN: ".$self->owner->owner;
 
-  return \@val;
-};
+#  return \@val;
+#};
 
 1;
