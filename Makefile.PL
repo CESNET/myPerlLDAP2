@@ -38,7 +38,6 @@ if (($std_found==40) and ($found>=8)) {
   };
 };
 
-
 my %PM;
 my %MAN3PODS;
 my $file;
@@ -47,13 +46,14 @@ foreach $file (@files) {
   $PM{"myPerlLDAP/$file"}="\$(INST_LIBDIR)/$file";
   if (`grep "^=head1" myPerlLDAP/$file`) {
     $file =~ s/\//\:\:/g;
-    $file =~ s/\.pm^//;
+    $file =~ s/\.pm$//;
     print "  myPerlLDAP::$file\n";
-    $MAN3PODS{"myPerlLDAP/$file"}="\$(INST_MAN3DIR)/myPerlLDAP::$file.\$(MAN3EXT)";
+    $MAN3PODS{"myPerlLDAP/$file.pm"}="\$(INST_MAN3DIR)/myPerlLDAP::$file.\$(MAN3EXT)";
   };
 };
 
 $MAN3PODS{'myPerlLDAP.pod'}='$(INST_MAN3DIR)/myPerlLDAP.$(MAN3EXT)';
+$MAN3PODS{'ClassTree.pod'}='$(INST_MAN3DIR)/myPerlLDAP::ClassTree.$(MAN3EXT)';
 
 WriteMakefile(
 	      'NAME'		=> 'myPerlLDAP',
