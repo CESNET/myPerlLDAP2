@@ -1,3 +1,8 @@
+2004-11-10  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.88
+	* myPerlLDAP/attribute.pm, myPerlLDAP/entry.pm, t/30-update.t:
+	Opraveny chyby makeModificationRecord
+
 2004-10-25  Jan Tomasek  <jan@tomasek.cz>
 	* Version: 1.87
 	* myPerlLDAP/searchResult.pm: Pridany funkce cacheLocaly a removeLocaly
