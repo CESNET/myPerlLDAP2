@@ -91,7 +91,7 @@ sub nextEntry {
   };
 
   $dn = ldap_get_dn($self->{"ld"}, $self->{"ldentry"});
-  $entry->setDN($dn);
+  $entry->dn($dn);
 
   $attr = ldap_first_attribute($self->{"ld"}, $self->{"ldentry"}, $ber);
   $entry->clearModifiedFlags;
