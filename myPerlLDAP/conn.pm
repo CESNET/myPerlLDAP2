@@ -10,7 +10,7 @@ use myPerlLDAP::SearchResults;
 
 use vars qw($VERSION $_D);
 
-$VERSION = "0.2.2";
+$VERSION = "0.2.3";
 $_D = 1;
 
 #############################################################################
