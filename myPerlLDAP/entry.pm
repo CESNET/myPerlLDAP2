@@ -7,9 +7,9 @@ use Carp;
 
 use myPerlLDAP::attribute;
 
-use vars qw($VERSION $_D);
+use vars qw($VERSION $_D $AUTOLOAD %fields);
 
-$VERSION = "0.0.1";
+$VERSION = "0.5.0";
 
 # TODO:
 # - constructor for completly NEW entry (not loaded from ldap)
@@ -22,19 +22,34 @@ $VERSION = "0.0.1";
 # 10 ... excution of some methods
 $_D = 1;
 
+%fields = (
+	   dn          => undef,
+	   debug       => $_D,
+	   attrData    => {},
+	   attrOrder   => [],
+	   attrChanges => [],
+	   attrInit    => {},
+	  );
+
 sub new {
   my $proto = shift;
   my $class = ref($proto) || $proto;
-  my $self  = {};
 
-
-  $self->{_D} = $_D;
-
-  if (($_D >= 10) || ($self->{_D} >= 10)) {
+  if ($_D >= 10) {
     carp("$class created");
   };
 
-  bless($self, $class);
+  my $self = bless {_permitted_fields => \%fields, %fields}, $class;
+  foreach my $field (keys %fields) {
+    if (ref($fields{$field}) eq "HASH") {
+      my %hash;
+      $self->{$field} = \%hash;
+    };
+    if (ref($fields{$field}) eq "ARRAY") {
+      my @array;
+      $self->{$field} = \@array;
+    };
+  };
   $self->init(@_);
 
   return $self;
@@ -44,48 +59,70 @@ sub init {
   my $self = shift;
   my $args = shift;
 
-  $self->{DN} = undef;
-  $self->{ATTR} = {};
-  $self->{ATTR_ORDER} = [];
+  $self->attrData({});
   $self->clearModifiedFlags;
 
-  if (($_D >= 10) || ($self->{_D} >= 10)) {
+  if (($_D >= 10) || ($self->debug >= 10)) {
     carp("$self initiated");
-  };
-};
-
-sub clearModifiedFlags {
-  my $self = shift;
-
-  $self->{ATTR_CHANGES} = [];
-  $self->{ATTR_INIT} = {};
-
-  my $attr;
-  foreach $attr ($self->getAttributesList) {
-    $self->attr($attr)->clearModifiedFlag;
-    $self->{ATTR_INIT}->{$attr}=1;
   };
 };
 
 sub DESTROY {
   my $self = shift;
 
-  if (($_D >= 10) || ($self->{_D} >= 10)) {
+  if (($_D >= 10) || ($self->debug >= 10)) {
     carp("$self destroyed");
+  };
+};
+
+sub AUTOLOAD {
+  my $self = shift;
+  my $class = ref($self)
+    or carp "cannot call method $AUTOLOAD on non reference $self";
+  my $name = $AUTOLOAD;
+  $name =~ s/.*://;
+
+  if (exists $self->{_permitted_fields}->{$name}) {
+    if (@_) {
+      return $self->{$name} = shift;
+    } else {
+      return $self->{$name};
+    };
+  } elsif ($name eq 'DESTROY') {
+    if ($self->can('DESTROY')) {
+      $self->DESTROY;
+    } else {
+      return;
+    };
+  } else {
+    carp "Can't access method '$name' in class $class";
+  };
+};
+
+sub clearModifiedFlags {
+  my $self = shift;
+
+  $self->attrChanges([]);
+  $self->attrInit({});
+
+  my $attr;
+  foreach $attr ($self->getAttributesList) {
+    $self->attr($attr)->clearModifiedFlag;
+    $self->attrInit->{$attr}=1;
   };
 };
 
 sub getAttributesList {
   my $self = shift;
 
-  return @{$self->{ATTR_ORDER}};
+  return @{$self->attrOrder};
 };
 
 sub attr {
   my $self = shift;
   my $attr = lc shift;
 
-  return $self->{ATTR}->{$attr};
+  return $self->attrData->{$attr};
 };
 
 sub getLDIF {
@@ -95,7 +132,7 @@ sub getLDIF {
   my (@out);
 
   # TODO: dn, objectclasses, potom ten prvni z dn (RDN)
-  push @out, ("dn: ".$self->getDN());
+  push @out, ("dn: ".$self->dn);
   foreach $attr ($self->getAttributesList) {
     if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
       foreach $value (@{$self->attr($attr)->get}) {
@@ -114,38 +151,38 @@ sub getLDIF_String {
 };
 
 
-sub getDN {
-  my $self = shift;
+#sub getDN {
+#  my $self = shift;
 
-  return $self->{DN};
-};
+#  return $self->{DN};
+#};
 
-# TODO: How about renaming?
-sub setDN {
-  my $self = shift;
+## TODO: How about renaming?
+#sub setDN {
+#  my $self = shift;
 
-  $self->{DN}=shift;
-};
+#  $self->{DN}=shift;
+#};
 
 sub remove {
   my $self = shift;
   my $attr = lc shift;
 
   if (!defined($attr)) {
-    if ($_D || $self->{_D}) {
+    if ($_D || $self->debug) {
       carp("$self\->remove called without attr name");
     };
     return undef;
   };
 
   if ($self->attr($attr)) {
-    delete $self->{ATTR}->{$attr};
-    push @{$self->{ATTR_CHANGES}}, ("-$attr");
-    my @changes = grep(!/^$attr$/, @{$self->{ATTR_ORDER}});
-    $self->{ATTR_ORDER} = \@changes;
+    delete $self->attrData->{$attr};
+    push @{$self->attrChanges}, ("-$attr");
+    my @changes = grep(!/^$attr$/, @{$self->attrOrder});
+    $self->attrOrder(\@changes);
     return 1;
   } else {
-    if ($_D || $self->{_D}) {
+    if ($_D || $self->debug) {
       carp("$self\->remove attempt to remove non existing attribute=\"$attr\"");
     };
     return undef;
@@ -157,26 +194,26 @@ sub add {
   my $attr = shift;
 
   if (!defined($attr)) {
-    if ($_D || $self->{_D}) {
+    if ($_D || $self->debug) {
       carp("$self\->add called without attribute");
     };
     return undef;
   };
 
   if (defined($self->attr($attr->name))) {
-    if ($_D || $self->{_D}) {
+    if ($_D || $self->debug) {
       carp("$self\->addAsValues attempt to add attribute which exists");
     };
     return undef;
   };
 
-  push @{$self->{ATTR_ORDER}}, ($attr->name);
-  push @{$self->{ATTR_CHANGES}}, ("+".$attr->name);
-  $self->{ATTR}->{$attr->name}=$attr;
+  push @{$self->attrOrder}, ($attr->name);
+  push @{$self->attrChanges}, ("+".$attr->name);
+  $self->attrData->{$attr->name}=$attr;
   # object will be added to ATTR_ADDED so is useless to be marked as modified
   # because it will be writen to an LDAP db completely again
-  $self->{ATTR}->{$attr->name}->clearModifiedFlag;
-  return $self->{ATTR}->{$attr->name};
+  $self->attrData->{$attr->name}->clearModifiedFlag;
+  return $self->attrData->{$attr->name};
 };
 
 sub addAsValues {
@@ -184,14 +221,14 @@ sub addAsValues {
   my $attr = shift;
 
   if (!defined($attr) or (!defined($_[0]))) {
-    if ($_D || $self->{_D}) {
+    if ($_D || $self->debug) {
       carp("$self\->addAsValues called without attribute name or value(s)");
     };
     return undef;
   };
 
   if (defined($self->attr($attr))) {
-    if ($_D || $self->{_D}) {
+    if ($_D || $self->debug) {
       carp("$self\->addAsValues attempt to add attribute which exists");
     };
     return undef;
@@ -199,18 +236,17 @@ sub addAsValues {
 
   # Create and add new attribute
   my $new_attr = new myPerlLDAP::attribute($attr);
-                                  # TODO: Findout an OOP correct way
-  my $RO = $new_attr->{READONLY}; # This is dirty, but simplest way how to
-  $new_attr->{READONLY}=0 if $RO; # temporarly disable RO checks ... it is
-                                  # required for initial values setting
+  my $RO = $new_attr->readOnly;
+  $new_attr->readOnly=0 if $RO;
+
   if ($new_attr) {
     if ($new_attr->set(@_)) {
-      $new_attr->{READONLY}=1 if $RO;
+      $new_attr->readOnly=1 if $RO;
       return $self->add($new_attr);
     };
   };
 
-  $new_attr->{READONLY}=1 if $RO;
+  $new_attr->readOnly=1 if $RO;
 
   return;
 };
@@ -238,11 +274,11 @@ sub makeModificationRecord {
   my %add;
 
   my ($attr, $x);
-  foreach $x (@{$self->{ATTR_CHANGES}}) {
+  foreach $x (@{$self->attrChanges}) {
 
     if ($x =~ /^\-(.*)$/) { # delete
       $attr = $1;
-      if ($self->{ATTR_INIT}->{$attr}) {
+      if ($self->attrInit->{$attr}) {
 	$delete{$attr}=1;
 	delete $add{$attr} if (exists($add{$attr}));
 	delete $replace{$attr} if (exists($replace{$attr}));
@@ -254,7 +290,7 @@ sub makeModificationRecord {
     if ($x =~ /^\+(.+)$/) { # add
       $attr = $1;
 
-      if ($self->{ATTR_INIT}->{$attr}) {
+      if ($self->attrInit->{$attr}) {
 	# we can't add attribute which is in LDAP database, we have to overwrite
 	# it. This can happen if user first deletes attribute and then add it again.
 	$replace{$attr}=1;
@@ -314,7 +350,7 @@ sub getXML {
   my @ret;
   my $attr;
 
-  push @ret, "<dsml:entry dn=\"".$self->getDN."\">";
+  push @ret, "<dsml:entry dn=\"".$self->dn."\">";
   foreach $attr ($self->getAttributesList) {
     push @ret, map { "  $_"} @{$self->attr($attr)->getXML};
   };

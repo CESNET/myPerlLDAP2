@@ -307,7 +307,7 @@ sub delete {
   my $dn = $id;
 
   if (ref($id) eq 'myLDAP::entry') {
-    $dn = $id->getDN();
+    $dn = $id->dn;
   } else {
     $dn = $self->{"dn"} unless (defined($dn) && ($dn ne ""));
   };
@@ -331,7 +331,7 @@ sub add {
   return unless $entry;
 
   my $rec = $entry->makeAddRecord;
-  my $ret = ldap_add_s($self->{"ld"}, $entry->getDN, $rec);
+  my $ret = ldap_add_s($self->{"ld"}, $entry->dn, $rec);
 
   if ($ret == LDAP_SUCCESS) {
     $entry->clearModifiedFlags;
@@ -383,7 +383,7 @@ sub update {
   my ($self, $entry) = @_;
 
   my $rec = $entry->makeModificationRecord;
-  my $ret = ldap_modify_s($self->{"ld"}, $entry->getDN, $rec);
+  my $ret = ldap_modify_s($self->{"ld"}, $entry->dn, $rec);
 
   if ($ret == LDAP_SUCCESS) {
     $entry->clearModifiedFlags;
