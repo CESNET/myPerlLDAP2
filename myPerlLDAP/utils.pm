@@ -11,7 +11,9 @@ use perlOpenLDAP::API qw(LDAP_SCOPE_SUBTREE LDAP_SCOPE_BASE LDAP_SCOPE_ONELEVEL 
 $VERSION = "0.0.1";
 %EXPORT_TAGS = (
 		all => [qw(normalizeDN
-			   str2Scope)]
+			   str2Scope
+			   quote4XML
+			   quote4HTTP)]
 		);
 # Add Everything in %EXPORT_TAGS to @EXPORT_OK
 Exporter::export_ok_tags('all');
@@ -54,6 +56,31 @@ sub normalizeDN {
   @vals = ldap_explode_dn(lc $dn, 0);
 
   return join(",", @vals);
+};
+
+#############################################################################
+# Escape all for XML danger characters
+#
+sub quote4XML {
+  my $bla = shift;
+
+  $bla =~ s/&/&amp;/g;
+  $bla =~ s/\^/&\#94;/g;
+  $bla =~ s/\(/&\#40;/g;
+  $bla =~ s/\)/&\#41;/g;
+
+  return $bla;
+};
+
+#############################################################################
+# Escape all for HTTP danger characters
+#
+sub quote4HTTP {
+  my $bla = shift;
+
+  $bla =~ s/ /%20/g;
+
+  return $bla;
 };
 
 # Konec pohadky ;-)
