@@ -14,8 +14,10 @@ $myPerlLDAP::Attribute::_D=0;
 
 my %tree; # This is global variable =?> Am I dirty programmer? :))
 
-my $LDAPServerHost;
+my $LDAPServerHost = 'localhost';
 my $LDAPServerPort = LDAP_PORT;
+my $attrClassesPath = "/tmp/myPerlLDAP-ac";
+my $autoClassesPath = "Attribute";
 
 my $match_OID       = qw /^(\S+)\s+NAME/;
 my $match_NAME      = qw /NAME\s+\'([\w\-]+)\'/;
@@ -175,10 +177,6 @@ sub printAttributeHash {
   return($ret);
 };
 
-my $originalDir = `pwd`; chomp($originalDir);
-my $autoClassesPath = ".auto";
-my $attrClassesPath = "myPerlLDAP/Attribute";
-
 sub attributeHash2Class {
   my($attr) = @_;
 
@@ -248,7 +246,7 @@ sub attributeHash2Class {
     $classDefiniton = "# $attr->{origAttr}";
     $classHash = "# ".join("\n# ", split(/\n/, printAttributeHash($attr)));
 
-    open(CLASS, ">$originalDir/$attrClassesPath/$autoClassesPath/$name\.pm") or die "Can't open file $attrClassesPath/$autoClassesPath/$name\.pm for writing";
+    open(CLASS, ">$attrClassesPath/$autoClassesPath/$name\.pm") or die "Can't open file $attrClassesPath/$autoClassesPath/$name\.pm for writing";
     print CLASS <<EOF
 #!/usr/bin/perl -w
 
@@ -282,8 +280,7 @@ $init_code
 };
 EOF
 ;
-    close(CLASS);
-    symlink("$autoClassesPath/$name\.pm", "$name\.pm") or die "Can't create link $attrClassesPath/$autoClassesPath/$name\.pm->$attrClassesPath/$name\.pm: $!";
+   close(CLASS);
 
    if (!defined($tree{$superclass})) {
      my @array;
@@ -332,17 +329,27 @@ sub printClassTree {
       $ret .= printClassTree($cattr, "$shift     ");
     };
   };
-
   return $ret;
 };
 
-if ((@ARGV>2) or ((@ARGV)<1)) {
-  print STDERR "Usage: buildClasses.pl SERVER_HOSTNAME [SERVER_PORT]\n";
-  exit (0);
-};
 
-$LDAPServerHost = $ARGV[0];
-$LDAPServerPort = $ARGV[1] if (@ARGV==2);
+sub readAnswer {
+  my ($prompt,$default) = @_;
+  print $prompt;
+  print " [$default]: ";
+  my $resp = <STDIN>;
+  chomp($resp);
+  $resp =~ /\S/ ? $resp : $default;
+}
+
+print "myPerlLDAP - attribute classes generator\n";
+print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
+$LDAPServerHost = readAnswer("LDAP server hostname", $LDAPServerHost);
+$LDAPServerPort = readAnswer("LDAP server port", $LDAPServerPort);
+$attrClassesPath = readAnswer("Where do you want to write clases", $attrClassesPath);
+
+mkdir("$attrClassesPath");
+mkdir("$attrClassesPath/Attribute");
 
 my $conn = new myPerlLDAP::Conn({"host"   => $LDAPServerHost,
 				 "port"   => $LDAPServerPort})
@@ -365,15 +372,6 @@ $sres = $conn->search($subSchemaSubEntry,
 		      0,
 		      ("attributeTypes", "ldapSyntaxes"))
   or die "Can't read schema";
-
-# clean old classes, prepare place for new
-mkdir("$attrClassesPath/$autoClassesPath");
-opendir(DIR, $attrClassesPath) or die "Can't opendir $attrClassesPath: $!";
-my @files =  grep { (!/^\.*$/) and (-l "$attrClassesPath/$_")} readdir(DIR);
-closedir(DIR);
-unlink map { "$attrClassesPath/$_" } @files;
-# change working dir
-chdir($attrClassesPath) or die "Can't chdir to $attrClassesPath: $!";
 
 my ($attr, $syn, $a, %attrList);
 $entry = $sres->nextEntry();
@@ -413,7 +411,7 @@ foreach $oid (keys %attrList) {
 # Create .pod file with tree structure of attributes classes
 my @array = values %$superclasses;
 $tree{'Attribute'}=\@array;
-open(TREE, ">$originalDir/ClassTree.pod");
+open(TREE, ">$attrClassesPath/ClassTree.pod");
 print TREE "="."head1 NAME
 
 myPerlLDAP::Attribute inheritance diagram
@@ -424,3 +422,17 @@ print TREE printClassTree('Attribute', '  ');
 print TREE "\n=cut\n";
 close(TREE);
 
+# Create Makefile.PL
+open(MAKEFILEPL, ">$attrClassesPath/Makefile.PL");
+print MAKEFILEPL "#!/usr/bin/perl -w
+
+use ExtUtils::MakeMaker;
+
+WriteMakefile(
+    'NAME'          => 'myPerlLDAP::Attribute',
+    'VERSION'       => '$VERSION',
+    'AUTHOR'        => 'Jan Tomasek <jan\@tomasek.cz>',
+    'DISTNAME'      => 'myPerlLDAP-auto-attributes',
+    'PMLIBDIRS'     => ['Attribute'],
+);\n";
+close(MAKEFILEPL);
