@@ -8,7 +8,7 @@ use myPerlLDAP::attribute;
 use Mozilla::OpenLDAP::API qw(LDAP_PORT LDAP_SCOPE_BASE);
 
 use vars qw($VERSION);
-$VERSION = "0.5.0";
+$VERSION = "0.5.1";
 
 $myPerlLDAP::attribute::_D=0;
 
@@ -294,7 +294,7 @@ $fields
 sub new {
   my \$proto = shift;
   my \$class = ref(\$proto) || \$proto;
-  my \$self = bless \$class->SUPER::new(), \$class;
+  my \$self = bless \$class->SUPER::new(@_), \$class;
 
   foreach my \$element (keys \%fields) {
     \$self->{_permitted_fields}->{\$element} = \$fields{\$element};
