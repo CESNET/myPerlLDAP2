@@ -1,3 +1,7 @@
+2005-01-26  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.91
+	* myPerlLDAP/conn.pm: Pridano volitelne logovani zmen do syslogu
+
 2005-01-23  Jan Tomasek  <jan@tomasek.cz>
 	* Version: 1.90
 	* myPerlLDAP/attribute.pm: Odstraneny zapomenute warningy
