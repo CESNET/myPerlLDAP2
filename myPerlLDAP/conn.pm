@@ -40,7 +40,7 @@ use strict;
 use perlOpenLDAP::API 1.4 qw(/.+/);
 use myPerlLDAP::utils qw(str2Scope normalizeDN);
 use myPerlLDAP::entry;
-use myPerlLDAP::searchResults;
+use myPerlLDAP::searchResult;
 
 use vars qw($VERSION $_D);
 
