@@ -467,7 +467,6 @@ sub makeAddRecord {
   my $attr;
   foreach $attr (@{$self->attrList}) {
     if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
-      #$rec{$attr}->{ab}=$self->attr($attr)->get;
       %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('ab')});
     }; # else: Attribute which have no value doesn't exists.
   };
@@ -549,15 +548,8 @@ sub makeModificationRecord {
   foreach $attr (keys %add, keys %replace) {
     die "This should never happen" if (defined($rec{$attr}));
 
-    #$rec{$attr}->{rb}=$self->attr($attr)->get;
     %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('rb')});
   };
-
-#  foreach $attr (keys %replace) {
-#    die "This should never happen" if (defined($rec{$attr}));
-
-#    $rec{$attr}->{rb}=$self->attr($attr)->get;
-#  };
 
   foreach my $attrName (@{$self->attrList}) {
     if (($self->attr($attrName)->getModifiedFlag()) and
@@ -566,7 +558,6 @@ sub makeModificationRecord {
       # I don't have much time ... to do better implementation I will
       # need modify myPerlLDAP::attribute to be able produce modificaion
       # record for this.
-      #$rec{$attr}->{rb}=$self->attr($attr)->get;
       %rec = (%rec, %{$self->attr($attrName)->makeModificationRecord('rb')});
     };# else -> attribute was added as new and after that it was modified
       # I not process it here because it is being added as new attr ...
