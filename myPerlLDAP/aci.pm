@@ -121,13 +121,15 @@ sub init {
 
   my %hash;
   my $entry = ldap_first_entry($ld,$res);
-  my $ber;
-  my $attr = lc ldap_first_attribute($ld,$entry,$ber);
-  while ($attr) {
-    my @vals = ldap_get_values($ld, $entry, $attr);
+  if ($entry) {
+    my $ber;
+    my $attr = lc ldap_first_attribute($ld,$entry,$ber);
+    while ($attr) {
+      my @vals = ldap_get_values($ld, $entry, $attr);
 
-    $hash{$attr} = \@vals;
-    $attr = lc ldap_next_attribute($ld, $entry, $ber);
+      $hash{$attr} = \@vals;
+      $attr = lc ldap_next_attribute($ld, $entry, $ber);
+    };
   };
 
   $self->initFromHash(\%hash);
