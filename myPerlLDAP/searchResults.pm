@@ -91,6 +91,7 @@ sub nextEntry {
   my ($ber) = \$berv;
 
   my $entry = new myPerlLDAP::entry;
+  $entry->owner($self->owner);
 
   if ($self->{"ldfe"} == 1) {
     return unless defined($self->{"ldres"});
@@ -146,4 +147,14 @@ sub count {
   my $self = shift;
 
   return ldap_count_entries($self->{"ld"}, $self->{"ldres"});
+};
+
+sub owner {
+  my $self = shift;
+
+  if (@_) {
+    return $self->{OWNER} = shift;
+  } else {
+    return $self->{OWNER};
+  };
 };
