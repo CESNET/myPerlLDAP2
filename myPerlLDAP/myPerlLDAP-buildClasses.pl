@@ -19,6 +19,8 @@ my $LDAPServerPort = LDAP_PORT;
 my $attrClassesPath = "/tmp/myPerlLDAP-ac";
 my $autoClassesPath = "Attribute";
 
+my @files;
+
 my $match_OID       = qw /^(\S+)\s+NAME/;
 my $match_NAME      = qw /NAME\s+\'([\w\-]+)\'/;
 my $match_MNAMES    = qw /NAME\s+\(\s*([\w\s\'\-]+)\s*\)/;
@@ -246,6 +248,7 @@ sub attributeHash2Class {
     $classDefiniton = "# $attr->{origAttr}";
     $classHash = "# ".join("\n# ", split(/\n/, printAttributeHash($attr)));
 
+    push @files, "$autoClassesPath/$name\.pm";
     open(CLASS, ">$attrClassesPath/$autoClassesPath/$name\.pm") or die "Can't open file $attrClassesPath/$autoClassesPath/$name\.pm for writing";
     print CLASS <<EOF
 #!/usr/bin/perl -w
@@ -395,10 +398,6 @@ while ($entry) {
     };
   };
 
-  #foreach $syn (@{$entry->{'ldapSyntaxes'}}) {
-  #  print "$syn\n";
-  #};
-
   $entry = $sres->nextEntry();
 };
 
@@ -436,3 +435,16 @@ WriteMakefile(
     'PMLIBDIRS'     => ['Attribute'],
 );\n";
 close(MAKEFILEPL);
+
+# Create MANIFEST
+open(MANIFEST, ">$attrClassesPath/MANIFEST");
+print MANIFEST "MANIFEST\n";
+print MANIFEST "README\n";
+print MANIFEST join("\n", @files);
+close(MANIFEST);
+
+# Create README
+open(README, ">$attrClassesPath/README");
+print README "This is just temporary package, any info you need is written in
+myPerlLDAP documentation\n";
+close(README);
