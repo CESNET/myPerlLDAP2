@@ -221,8 +221,12 @@ sub sort {
     my $key = $entry->dn;
     my @sortKeyValues;
     foreach my $sortKey (@sortBy) {
-      my $values = $entry->getValues($sortKey);
+      my $values = $entry->getValues($sortKey,'lang-en');
       my $valuesCount = (scalar @{$values});
+      if ($valuesCount == 0) {
+	$values = $entry->getValues($sortKey);
+	$valuesCount = (scalar @{$values});
+      };
       if ($valuesCount == 0) {
 	# There is no value, but we were required to sort by... so empty string
 	# is IMHO best choice
@@ -239,6 +243,7 @@ sub sort {
   $self->reset;
 
   foreach my $entryNode (sort cmpEntryNode values %entries) {
+    #warn $entryNode->{entry}->getValues('cn')->[0];
     $sortedEntries{$counter++} = $entryNode->{entry};
   };
 
