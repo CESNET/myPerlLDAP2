@@ -44,7 +44,7 @@ use myPerlLDAP::searchResults;
 
 use vars qw($VERSION $_D);
 
-$VERSION = "1.0.0";
+$VERSION = "1.00";
 $_D = 1;
 
 #############################################################################
