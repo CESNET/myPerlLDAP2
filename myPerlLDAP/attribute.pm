@@ -318,6 +318,27 @@ sub getValues {
   return \@values;
 }; # getValues ----------------------------------------------------------------
 
+sub matchValues {
+  my $self = shift;
+  my $expr = shift;
+  my $type = shift; $type = "" unless $type;
+  my @values;
+
+  return [] if (!defined($expr));
+
+  foreach my $value (@{$self->{VALUES}}) {
+    my ($v,$t) = @$value;
+    $t = "" unless $t;
+    if ($t eq $type) {
+      if ($v =~ /$expr/) {
+	push @values, ($v);
+      };
+    };
+  };
+
+  return \@values;
+}; # matchValues --------------------------------------------------------------
+
 
 sub has {
   my $self = shift;

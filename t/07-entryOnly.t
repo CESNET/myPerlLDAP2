@@ -20,7 +20,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # #############################################################################
 
-BEGIN { $| = 1; print "1..13\n";}
+BEGIN { $| = 1; print "1..15\n";}
 
 use lib qw(/home/honza/proj/myPerlLDAP);
 use strict;
@@ -130,11 +130,21 @@ print "ok 12\n" if $SOK;
 
 # Test seting values of notexisting attribute
 $SOK = 1;
-$entry->setValues('businesCattegory', ['SLA1',
+$entry->setValues('businessCategory', ['SLA1',
 				       'BFU2'])==2 or $SOK=0;
 print "not ok 13\n" unless $SOK;
 print "ok 13\n" if $SOK;
 
+# Test matchValues
+$SOK = 1;
+@{$entry->matchValues('businessCategory', '^B')}==1 or $SOK=0;
+print "not ok 14\n" unless $SOK;
+print "ok 14\n" if $SOK;
+
+$SOK = 0;
+@{$entry->matchValues('business-Category', '^B')}==1 or $SOK=1;
+print "not ok 15\n" unless $SOK;
+print "ok 15\n" if $SOK;
 
 #print $entry->XMLString;
 
