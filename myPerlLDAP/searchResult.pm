@@ -174,6 +174,17 @@ sub nextEntry {
       my $aci = new myPerlLDAP::aci;
       $aci->initFromHash(\%aclRights);
       $entry->aci($aci);
+    } else {
+      # Ten samy kod co je u myPerlLDAP::conn chtelo by to udelat nejak lip.
+      my %hash;
+      $hash{'aclrights;entrylevel'} = ['add:0,delete:0,read:1,write:0,proxy:0'];
+      foreach my $attr (@{$entry->attrList}) {
+	$hash{"aclrights;attributelevel;$attr"} = ['search:1,read:1,compare:1,write:0,selfwrite_add:0,selfwrite_delete:0,proxy:0'];
+      };
+
+      my $aci = new myPerlLDAP::aci;
+      $aci->initFromHash(\%hash);
+      $entry->aci($aci);
     };
 
     $entry->clearModifiedFlags;
