@@ -20,6 +20,18 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # #############################################################################
 
+# #############################################################################
+# This module contains some code pieces from Mozilla::OpenLDAP::Conn
+# (extracted from Mozilla-OpenLDAP-API-1.4), please look at coments before
+# definition of each function for info about it's origin. The original code
+# was introduced by this:
+#    The Original Code is PerLDAP. The Initial Developer of the Original
+#    Code is Netscape Communications Corp. and Clayton Donley. Portions
+#    created by Netscape are Copyright (C) Netscape Communications Corp.,
+#    portions created by Clayton Donley are Copyright (C) Clayton Donley.
+#    All Rights Reserved.
+# #############################################################################
+
 package myPerlLDAP::conn;
 
 use strict;
@@ -398,7 +410,7 @@ sub modifyRDN {
 #############################################################################
 # Update an object.
 #
-# Inspired by perlLDAP-1.4 code - most of code was deleted functionality
+# Inspired by perlLDAP-1.4 code - most of code was deleted, functionality
 # is now in Entry::makeModificationRecord. Each book about OOP says:
 #
 #    "Nerver let user or other class using your class touch it's
