@@ -197,7 +197,7 @@ sub reset {
   my $self = shift;
 
   if (defined($self->sEntr)) {
-    $self->sEntr(0);
+    $self->sEntrI(0);
   } else {
     $self->{"ldfe"} = 1;
   };
@@ -207,6 +207,10 @@ sub reset {
 sub count {
   my $self = shift;
 
+  if (defined($self->sEntr)) {
+    my $count = keys %{$self->sEntr};
+    return $count;
+  };
   return ldap_count_entries($self->{"ld"}, $self->{"ldres"});
 };
 
@@ -237,9 +241,14 @@ sub sort {
   my %sortedEntries;
   my $counter=0;
 
+  $self->reset;
   my $entry = $self->nextEntry;
+#  warn $entry;
+#  warn "while";
   while ($entry) {
+#    warn "in while";
     my $key = $entry->dn;
+#    warn $key;
     my @sortKeyValues;
     foreach my $sortKey (@sortBy) {
       my $values = $entry->getValues($sortKey,'lang-en');
@@ -261,14 +270,58 @@ sub sort {
 		      entry => $entry};
     $entry = $self->nextEntry;
   };
-  $self->reset;
 
   foreach my $entryNode (sort cmpEntryNode values %entries) {
-    #warn $entryNode->{entry}->getValues('cn')->[0];
+#    warn $entryNode->{entry}->dn;
     $sortedEntries{$counter++} = $entryNode->{entry};
   };
 
   $self->sEntr(\%sortedEntries);
+  $self->sEntrI(0);
+
+  return 1;
+};
+
+sub cacheLocaly {
+  my $self = shift;
+
+  my $entry;
+  my $counter = 0;
+  my %localEntries;
+  $self->reset;
+
+  while ($entry = $self->nextEntry) {
+    $localEntries{$counter++} = $entry;
+  };
+
+  $self->sEntr(\%localEntries);
+  $self->sEntrI(0);
+
+  return 1;
+};
+
+sub removeLocaly {
+  my $self = shift;
+  my @remove = @_;
+
+  $self->cacheLocaly unless (defined($self->sEntr));
+  $self->reset;
+
+  my %localEntries = %{$self->sEntr};
+  my %newLocalEntries;
+
+  my @r;
+  my $counter = 0;
+  my $count = $self->count;
+  for(my $i=0; $i<$count; $i++) {
+    my $dn = $localEntries{$i}->dn;
+    if (grep {$_ eq $dn} @remove) {
+    } else {
+      $newLocalEntries{$counter++} = $localEntries{$i};
+    };
+  };
+
+  $self->sEntr(\%newLocalEntries);
   $self->sEntrI(0);
 
   return 1;
