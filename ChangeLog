@@ -1,3 +1,7 @@
+2004-03-24  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.82
+	* myPerlLDAP/conn.pm: Updated anonymous ACL handler
+
 2004-03-15  Jan Tomasek  <jan@tomasek.cz>
 	* Version: 1.81
 	* myPerlLDAP/myPerlLDAP-buildClasses.pl:
