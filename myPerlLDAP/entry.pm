@@ -359,7 +359,7 @@ sub XML {
   my @ret;
   my $attr;
 
-  push @ret, "<dsml:entry dn=\"".$self->dn."\" xmlns:dsml=\"http://www.w3.org/2400/dsml\">";
+  push @ret, "<dsml:entry dn=\"".$self->dn."\" xmlns:dsml=\"http://www.dsml.org/DSML\">";
   foreach $attr ($self->attributesList) {
     push @ret, map { "  $_"} @{$self->attr($attr)->XML};
   };
