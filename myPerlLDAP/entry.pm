@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w
 
-package myPerlLDAP::Entry;
+package myPerlLDAP::entry;
 
 use strict;
 use Carp;
 
-use myPerlLDAP::Attribute;
+use myPerlLDAP::attribute;
 
 use vars qw($VERSION $_D);
 
@@ -198,7 +198,7 @@ sub addAsValues {
   };
 
   # Create and add new attribute
-  my $new_attr = new myPerlLDAP::Attribute($attr);
+  my $new_attr = new myPerlLDAP::attribute($attr);
                                   # TODO: Findout an OOP correct way
   my $RO = $new_attr->{READONLY}; # This is dirty, but simplest way how to
   $new_attr->{READONLY}=0 if $RO; # temporarly disable RO checks ... it is
@@ -247,7 +247,7 @@ sub makeModificationRecord {
 	delete $add{$attr} if (exists($add{$attr}));
 	delete $replace{$attr} if (exists($replace{$attr}));
       }; # else -> attribute isn't in LDAP database it was added and deleted
-         # someone who is using myPerlLDAP::Entry, we can't pass this to
+         # someone who is using myPerlLDAP::entry, we can't pass this to
          # server othervise all requests will fail
     };
 
@@ -299,7 +299,7 @@ sub makeModificationRecord {
 #      print "rec: $attr<BR>";
       # TODO: This is nasty. I'm replacing whole attribute, but now
       # I don't have much time ... to do better implementation I will
-      # need modify myPerlLDAP::Attribute to be able produce modificaion
+      # need modify myPerlLDAP::attribute to be able produce modificaion
       # record for this.
       $rec{$attr}->{rb}=$self->attr($attr)->get;
     };# else -> attribute was added as new and after that it was modified
