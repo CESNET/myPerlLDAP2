@@ -384,7 +384,7 @@ my $sres = $conn->search(' ',
 			 ('subSchemaSubEntry'))
   or die "Can't locate place where schema is stored";
 my $entry = $sres->nextEntry();
-my $subSchemaSubEntry  = ${$entry->attr('subSchemaSubEntry')->get()}[0];
+my $subSchemaSubEntry  = ${$entry->attr('subSchemaSubEntry')->getValues()}[0];
 
 # Get schema
 $sres = $conn->search($subSchemaSubEntry,
@@ -397,7 +397,7 @@ $sres = $conn->search($subSchemaSubEntry,
 my ($attr, $syn, $a, %attrList);
 $entry = $sres->nextEntry();
 while ($entry) {
-  foreach $attr (@{$entry->attr('attributetypes')->get}) {
+  foreach $attr (@{$entry->attr('attributetypes')->getValues}) {
     $a = parseAttributeType($attr);
 
     # Add this attribute to atribute hash
@@ -466,3 +466,5 @@ open(README, ">$attrClassesPath/README");
 print README "This is just temporary package, any info you need is written in
 myPerlLDAP documentation\n";
 close(README);
+
+`cp -a libmyperlldap-attribute/debian $attrClassesPath`
