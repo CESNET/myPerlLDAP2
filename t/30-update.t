@@ -69,6 +69,7 @@ if ($entry->isModified) {
 
 # - 6 -----------------------------------------------------------------------
 $entry->addValues('description', 'Popiska');
+$entry->addValues('loginShell', '/bin/false');
 #$entry->removeAttr('givenName');
 $entry->removeAttr('mail');
 $entry->addValues('givenName', 'Trotl');
@@ -86,7 +87,6 @@ $SOK = 1;
 $conn->update($entry) or $SOK = 0;
 print "not ok 7\n" unless $SOK;
 print "ok 7\n" if $SOK;
-
 
 # - 8 -----------------------------------------------------------------------
 if ($entry->isModified) {
@@ -121,6 +121,21 @@ if ($entry->isModified) {
 
 # - 12 ----------------------------------------------------------------------
 $SOK = 1;
-$conn->close or $SOK = 0;
+$entry->removeValues('description', 'Popiska');
+$conn->update($entry) or $SOK = 0;
 print "not ok 12\n" unless $SOK;
 print "ok 12\n" if $SOK;
+
+# - 13 ----------------------------------------------------------------------
+$SOK = 1;
+$entry->attr('loginShell')->setValues(undef);
+$conn->update($entry) or $SOK = 0;
+print "not ok 13\n" unless $SOK;
+print "ok 13\n" if $SOK;
+
+
+# - 14 ----------------------------------------------------------------------
+$SOK = 1;
+$conn->close or $SOK = 0;
+print "not ok 14\n" unless $SOK;
+print "ok 14\n" if $SOK;

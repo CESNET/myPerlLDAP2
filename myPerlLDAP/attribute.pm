@@ -247,6 +247,8 @@ sub addValues {
     } else {
       if ($addCounter and $self->singleValue) {
 	carp("more than one value passed to singe-value attribute $self");
+      } elsif (!defined($value)) {
+	#warn "SKIP";
       } else {
 	my @valElem = ($self->checkFixLength($value), $type);
 	push @values, \@valElem;
@@ -498,11 +500,22 @@ sub makeModificationRecord {
       addValues2res(\%res, $attr, 'ab', $self->getValues($type));
     };
   } elsif (defined($self->{_cleared})) {
-    #warn "$self->makeModificationRecord: Replace mode";
+    #warn "$self->makeModificationRecord: Replace mode of _cleared";
+    my $counter=0;
     foreach my $val (@{$self->{VALUES}}) {
       my $attr = $self->name;
       $attr = "$attr;$val->[1]" if ($val->[1]);
       addValues2res(\%res, $attr, 'rb', [$val->[0]]);
+      $counter++;
+    };
+    addValues2res(\%res, $self->name, 'rb', []) if ($counter==0);
+  } elsif ($mode eq 'rb-force') {
+    foreach my $type (@{$self->types}) {
+      my $attr = $self->name;
+      $attr = "$attr;$type" if ($type);
+      # TODO: 18.05.2004 Access $self->{VALUES} rather directly this
+      # is causing not necesary sorting when enabled
+      addValues2res(\%res, $attr, 'rb', $self->getValues($type));
     };
   } else {
     # Values to be deleted (_VALUES - VALUES)
@@ -535,10 +548,12 @@ sub makeModificationRecord {
 	addValues2res(\%res, $attr, 'ab', [$_val->[0]]);
       };
     };
-#     warn Dumper("NAME", $self->name,
-# 		"CLEARED", $self->{_cleared},
-# 		"_VALUES", $self->{_VALUES},
-# 		"VALUES",  $self->{VALUES});
+#    warn Dumper("----------------------------------------------------------",
+#		"NAME",     $self->name,
+#		"MODIFIED", $self->modified,
+#		"CLEARED",  $self->{_cleared},
+#		"_VALUES",  $self->{_VALUES},
+#		"VALUES",   $self->{VALUES});
   };
 
   return \%res;
