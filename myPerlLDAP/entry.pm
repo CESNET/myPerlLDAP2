@@ -103,8 +103,6 @@ sub AUTOLOAD {
 sub clearModifiedFlags {
   my $self = shift;
 
-  warn "clearModifiedFlags";
-  
   $self->attrChanges([]);
   $self->attrInit({});
 
