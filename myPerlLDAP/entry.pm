@@ -53,6 +53,7 @@ use vars qw($AUTOLOAD @ISA %fields);
 	   attrChanges => [],
 	   attrInit    => {},
 	   attrMap     => {},
+	   aci         => undef,
 	  );
 
 sub new {

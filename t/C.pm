@@ -24,16 +24,34 @@ package C;
 
 use strict;
 use perlOpenLDAP::API qw(LDAP_PORT LDAPS_PORT LDAP_SCOPE_SUBTREE);
-use vars qw ($LDAPServerHost $LDAPServerPort $SearchFilter $TestBase $BindDN $BindPasswd $TestRDN);
+use vars qw ($LDAPServerHost $LDAPServerPort $SearchFilter $TestBase $BindDN $BindPasswd $TestRDN @attrs);
 
 #$LDAPServerHost = 'tady.ten.cz';
-#$LDAPServerHost = 'pki.cesnet.cz';
-$LDAPServerHost = 'localhost';
+
 $LDAPServerPort = LDAP_PORT;
-$TestBase       = 'ou=People,o=test';
 $SearchFilter   = '(uid=*)';
 $TestRDN        = 'uid=test';
-$BindDN         = 'cn=Manager, o=test';
-$BindPasswd     = 'test_secret';
+
+@attrs          = ('objectClass',
+		   'uid',
+		   'userPassword',
+		   'cn',
+		   'tailDegree',
+		   'headDegree');
+
+#$LDAPServerHost = 'cml.cesnet.cz';
+#$TestBase       = 'ou=People,dc=cesnet,o=test';
+#$BindDN         = 'uid=test,ou=People,o=test';
+#$BindPasswd     = 'test123456';
+
+$LDAPServerHost = 'cml.cesnet.cz';
+$TestBase       = 'ou=People,dc=cesnet,o=test';
+$BindDN         = 'uid=testmich,ou=People,dc=cesnet,o=test';
+$BindPasswd     = 'test123456';
+
+#$LDAPServerHost = 'localhost';
+#$TestBase       = 'ou=People,o=test';
+#$BindDN         = 'cn=Manager, o=test';
+#$BindPasswd     = 'test_secret';
 
 1;
