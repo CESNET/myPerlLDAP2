@@ -275,8 +275,10 @@ sub read {
 		     0,
 		     defined($res) ? $res : 0)) {
     my $sRes = new myPerlLDAP::searchResult($self->ld, $res);
-    my $entry = $sRes->nextEntry;
-    return $entry;
+    if ($sRes) {
+      my $entry = $sRes->nextEntry;
+      return $entry;
+    };
   };
 
   return undef;
