@@ -20,7 +20,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # #############################################################################
 
-BEGIN { $| = 1; print "1..5\n";}
+BEGIN { $| = 1; print "1..7\n";}
 #END {print "not ok 1\n" unless $SOK;}
 
 use lib qw(/home/honza/proj/myPerlLDAP);
@@ -54,16 +54,44 @@ print "ok 3\n" if $SOK;
 # - 4 -----------------------------------------------------------------------
 $SOK = 1;
 my $entry = $res->nextEntry or $SOK = 0;
+my $c1 = 0;
+my $dn = $entry->dn if $entry;
 while ($entry) {
   my $dump = join("\n", @{$entry->XML});
   $entry = $res->nextEntry;
+  $c1++;
 };
 print "not ok 4\n" unless $SOK;
 print "ok 4\n" if $SOK;
 
 # - 5 -----------------------------------------------------------------------
 $SOK = 1;
-$conn->close or $SOK = 0;
-print "not ok 5\n" unless $SOK;
+my $c2 = 0;
+$res->reset;
+$entry = $res->nextEntry or $SOK = 0;
+while ($entry) {
+  my $dump = join("\n", @{$entry->XML});
+  $entry = $res->nextEntry;
+  $c2++;
+};
+$SOK = 0 if ($c1 != $c2);
+print "not ok ($c1, $c2) 5\n" unless $SOK;
 print "ok 5\n" if $SOK;
+
+# - 6 -----------------------------------------------------------------------
+$SOK = 1;
+if (defined($dn)) {
+  my $entry = $conn->read($dn);
+  $SOK = 0 unless ($entry);
+} else {
+  $SOK = 0;
+};
+print "not ok 6\n" unless $SOK;
+print "ok 6\n" if $SOK;
+
+# - 7 -----------------------------------------------------------------------
+$SOK = 1;
+$conn->close or $SOK = 0;
+print "not ok 7\n" unless $SOK;
+print "ok 7\n" if $SOK;
 

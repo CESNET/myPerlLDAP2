@@ -1,9 +1,20 @@
 libmyperlldap-perl (1.51-1) unstable; urgency=low
 
   * class myPerlLDAP::searchResults renamed to searchResult
-  * fixed all tests
+  * myPerlLDAP::conn 
+     - is from now >potomek< of the abstract
+     - method getLD was replaced by property ld
+     - method getRes was replaced by property ldRes
+     - method getErrorCode was replaced by error
+     - method getErrorString was replaced by errorMessage
+     - method printError was replaced by printErrorMessage
+     - new method read which read entry from directory (no searchResult 
+       object)
+  * myPerlLDAP::searchResult
+     - new method reset which allows browsing results again  
+  * fixed all tests and added some new for new features
 
- -- Jan Tomasek <jan@tomasek.cz>  Wed, xx Jul 2002 xx:xx:00 +0200
+ -- Jan Tomasek <jan@tomasek.cz>  Wed, 23 Jul 2002 21:45:00 +0200
 
 libmyperlldap-perl (1.50-1) unstable; urgency=low
 

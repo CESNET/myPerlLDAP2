@@ -38,14 +38,28 @@ use strict;
 
 # TODO: Dont' import all ... mod_perl eff :(
 use perlOpenLDAP::API 1.4 qw(/.+/);
+use myPerlLDAP::abstract;
 use myPerlLDAP::utils qw(str2Scope normalizeDN);
 use myPerlLDAP::entry;
 use myPerlLDAP::searchResult;
 
-use vars qw($VERSION $_D);
+use vars qw($VERSION @ISA %fields);
 
-$VERSION = "1.50";
-$_D = 1;
+@ISA = ("myPerlLDAP::abstract");
+
+$VERSION = "1.51";
+
+%fields = (
+	   debug => 1,
+	   host => undef,
+	   port => LDAP_PORT,
+	   bindDN => undef,
+	   bindPasswd => undef,
+	   certDB => undef,
+	   ld => undef,
+	   ldRes => undef,
+	   dn => undef,
+	  );
 
 #############################################################################
 # Creator, create and initialize a new LDAP object ("connection"). We support
@@ -58,34 +72,41 @@ $_D = 1;
 # isn't now able to work with certs I think.
 
 sub new {
-  my ($class, $self) = (shift, {});
+  my $proto = shift;
+  my $class = ref($proto) || $proto;
+
+  my $self = bless $class->SUPER::new(@_), $class;
+
+  foreach my $element (keys %fields) {
+    $self->{_permitted_fields}->{$element} = $fields{$element};
+  };
+  @{$self}{keys %fields} = values %fields;
 
   if (ref $_[$[] eq "HASH") {
     my ($hash);
 
     $hash = $_[$[];
-    $self->{"host"} = $hash->{"host"} if defined($hash->{"host"});
-    $self->{"port"} = $hash->{"port"} if defined($hash->{"port"});
-    $self->{"binddn"} = $hash->{"bind"} if defined($hash->{"bind"});
-    $self->{"bindpasswd"} = $hash->{"pswd"} if defined($hash->{"pswd"});
-    $self->{"certdb"} = $hash->{"certdb"} if defined($hash->{"certdb"});
+    $self->host($hash->{"host"}) if defined($hash->{"host"});
+    $self->port($hash->{"port"}) if defined($hash->{"port"});
+    $self->bindDN($hash->{"bind"}) if defined($hash->{"bind"});
+    $self->bindPasswd($hash->{"pswd"}) if defined($hash->{"pswd"});
+    $self->certDB($hash->{"certdb"}) if defined($hash->{"certdb"});
   } else {
     my ($host, $port, $binddn, $bindpasswd, $certdb, $authmeth) = @_;
 
-    $self->{"host"} = $host;
-    $self->{"port"} = $port;
-    $self->{"binddn"} = $binddn;
-    $self->{"bindpasswd"} = $bindpasswd;
-    $self->{"certdb"} = $certdb;
+    $self->host($host);
+    $self->port($port);
+    $self->bindDN($binddn);
+    $self->bindPasswd($bindpasswd);
+    $self->certDB($certdb);
   };
 
-  $self->{"binddn"} = "" unless defined($self->{"binddn"});
-  $self->{"bindpasswd"} = "" unless defined($self->{"bindpasswd"});
+  $self->bindDN("") unless defined($self->bindDN);
+  $self->bindPasswd("") unless defined($self->bindPasswd);
 
-  if (!defined($self->{"port"}) || ($self->{"port"} eq "")) {
-    $self->{"port"} = (($self->{"certdb"} ne "") ? LDAPS_PORT : LDAP_PORT);
+  if (!defined($self->port) || ($self->port eq "")) {
+    $self->port((($self->certDB ne "") ? LDAPS_PORT : LDAP_PORT));
   }
-  bless $self, $class;
 
   return unless $self->init();
   return $self;
@@ -99,7 +120,7 @@ sub new {
 sub DESTROY {
   my ($self) = shift;
 
-  return unless defined($self->{"ld"});
+  return unless defined($self->ld);
 
   $self->close();
 }; # DESTROY ----------------------------------------------------------------
@@ -115,18 +136,18 @@ sub init {
   my ($self) = shift;
   my ($ret, $ld);
 
-  if (defined($self->{"certdb"}) && ($self->{"certdb"} ne "")) {
-    $ret = ldapssl_client_init($self->{"certdb"}, 0);
+  if (defined($self->certDB) && ($self->certDB ne "")) {
+    $ret = ldapssl_client_init($self->certDB, 0);
     return if ($ret < 0);
 
-    $ld = ldapssl_init($self->{"host"}, $self->{"port"}, 1);
+    $ld = ldapssl_init($self->host, $self->port, 1);
   } else {
-    $ld = ldap_init($self->{"host"}, $self->{"port"});
+    $ld = ldap_init($self->host, $self->port);
   };
   return unless $ld;
 
-  $self->{"ld"} = $ld;
-  $ret = ldap_simple_bind_s($ld, $self->{"binddn"}, $self->{"bindpasswd"});
+  $self->ld($ld);
+  $ret = ldap_simple_bind_s($ld, $self->bindDN, $self->bindPasswd);
 
   return (($ret == LDAP_SUCCESS) ? 1 : undef);
 } # init --------------------------------------------------------------------
@@ -154,42 +175,18 @@ sub isURL {
 } # isURL -------------------------------------------------------------------
 
 #############################################################################
-# Return the actual low level LD connection structure, which is needed if
-# you want to call any of the API functions yourself...
-#
-# Without any changes copied from perLDAP-1.4
-#
-sub getLD {
-  my ($self) = shift;
-
-  return $self->{"ld"} if defined($self->{"ld"});
-}; # getLD ------------------------------------------------------------------
-
-#############################################################################
-# Return the actual the current result message, don't use this unless you
-# really have to...
-#
-# Without any changes copied from perLDAP-1.4
-#
-sub getRes {
-  my ($self) = shift;
-
-  return $self->{"ldres"} if defined($self->{"ldres"});
-}; # getRes -----------------------------------------------------------------
-
-#############################################################################
 # Return the Error code from the last LDAP api function call. The last two
 # optional arguments are pointers to strings, and will be set to the
 # match string and extra error string if appropriate.
 #
-# Without any change copied from perLDAP-1.4
+# Based on code of function getErrorCode from perLDAP-1.4
 #
-sub getErrorCode {
+sub error {
   my ($self, $match, $msg) = @_;
   my ($ret);
 
-  return LDAP_SUCCESS unless defined($self->{"ld"});
-  return ldap_get_lderrno($self->{"ld"}, $match, $msg);
+  return LDAP_SUCCESS unless defined($self->ld);
+  return ldap_get_lderrno($self->ld, $match, $msg);
 }; # getErrorCode -----------------------------------------------------------
 
 #############################################################################
@@ -197,12 +194,12 @@ sub getErrorCode {
 #
 # Without any change copied from perLDAP-1.4
 #
-sub getErrorString {
+sub errorMessage {
   my ($self) = shift;
   my ($err);
 
-  return LDAP_SUCCESS unless defined($self->{"ld"});
-  $err = ldap_get_lderrno($self->{"ld"}, undef, undef);
+  return LDAP_SUCCESS unless defined($self->ld);
+  $err = ldap_get_lderrno($self->ld, undef, undef);
 
   return ldap_err2string($err);
 } # getErrorString ----------------------------------------------------------
@@ -210,15 +207,15 @@ sub getErrorString {
 #############################################################################
 # Print the last error code...
 #
-# Without any change copied from perLDAP-1.4
+# Based on code from printError from perLDAP-1.4
 #
-sub printError {
+sub printErrorMessage {
   my ($self, $str) = @_;
 
-  return unless defined($self->{"ld"});
+  return unless defined($self->ld);
 
   $str = "LDAP error:" unless defined($str);
-  print "$str ", $self->getErrorString(), "\n";
+  print "$str ", $self->errorMessage(), "\n";
 } # printError --------------------------------------------------------------
 
 #############################################################################
@@ -235,22 +232,23 @@ sub search {
   $scope = str2Scope($scope);
   $filter = "(objectclass=*)" if ($filter =~ /^ALL$/i);
 
-  if (defined($self->{"ldres"})) {
-    ldap_msgfree($self->{"ldres"});
-    undef $self->{"ldres"};
+  if (defined($self->ldRes)) {
+    ldap_msgfree($self->ldRes);
+    $self->ldRes(undef);
+    # undef $self->{"ldres"};
   };
 
   if (ldap_is_ldap_url($filter)) {
-    if (! ldap_url_search_s($self->{"ld"}, $filter, $attrsonly, $res)) {
-      my $sRes = new myPerlLDAP::searchResults($self->{ld}, $res);
+    if (! ldap_url_search_s($self->ld, $filter, $attrsonly, $res)) {
+      my $sRes = new myPerlLDAP::searchResults($self->ld, $res);
       return $sRes;
     };
   } else {
-    if (! ldap_search_s($self->{"ld"}, $basedn, $scope, $filter,
+    if (! ldap_search_s($self->ld, $basedn, $scope, $filter,
 			defined(\@attrs) ? \@attrs : 0,
 			defined($attrsonly) ? $attrsonly : 0,
 			defined($res) ? $res : 0)) {
-      my $sRes = new myPerlLDAP::searchResult($self->{ld}, $res);
+      my $sRes = new myPerlLDAP::searchResult($self->ld, $res);
       $sRes->owner($self);
       return $sRes;
     };
@@ -258,6 +256,31 @@ sub search {
 
   return $entry;
 } # search ------------------------------------------------------------------
+
+#############################################################################
+# Read one entry identified by it's DN, list of required attrs is
+# also supported.
+#
+sub read {
+  my ($self, $dn, @attrs) = @_;
+  my $resv;
+  my $res = \$resv;
+
+  if (@attrs and (scalar(@attrs)==1)) {
+    @attrs = @{$attrs[0]} if (ref($attrs[0]) eq 'ARRAY');
+  };
+
+  if (!ldap_search_s($self->ld, $dn, LDAP_SCOPE_BASE, '(objectclass=*)',
+		     defined(\@attrs) ? \@attrs : 0,
+		     0,
+		     defined($res) ? $res : 0)) {
+    my $sRes = new myPerlLDAP::searchResult($self->ld, $res);
+    my $entry = $sRes->nextEntry;
+    return $entry;
+  };
+
+  return undef;
+}; # read -------------------------------------------------------------------
 
 #############################################################################
 # URL search, optimized for LDAP URL searches.
@@ -269,16 +292,16 @@ sub searchURL {
   my ($resv, $entry);
   my ($res) = \$resv;
 
-  if (defined($self->{"ldres"})) {
-    ldap_msgfree($self->{"ldres"});
-    undef $self->{"ldres"};
+  if (defined($self->ldRes)) {
+    ldap_msgfree($self->ldRes);
+    $self->ldRes(undef);
   };
 
-  if (! ldap_url_search_s($self->{"ld"}, $url,
-			  defined($attrsonly) ? $attrsonly : 0,
-			  defined($res) ? $res : 0)) {
-    $self->{"ldres"} = $res;
-    $self->{"ldfe"} = 1;
+  if (!ldap_url_search_s($self->ld, $url,
+			 defined($attrsonly) ? $attrsonly : 0,
+			 defined($res) ? $res : 0)) {
+    $self->ldRes = $res;
+    $self->{ldfe} = 1;
     $entry = $self->nextEntry();
   };
 
@@ -308,7 +331,7 @@ sub browse {
 sub compare {
   my ($self, $dn, $attr, $value) = @_;
 
-  return ldap_compare_s($self->{"ld"}, $dn, $attr, $value) ==
+  return ldap_compare_s($self->ld, $dn, $attr, $value) ==
     LDAP_COMPARE_TRUE;
 }; # compare ----------------------------------------------------------------
 
@@ -322,12 +345,12 @@ sub close {
   my $ret = LDAP_SUCCESS; # Originaly was here that assignment $ret = 1 ...
                           # it never can't work; Actualy this is useles ...
 
-  ldap_unbind_s($self->{"ld"}) if defined($self->{"ld"});
-  if (defined($self->{"ldres"})) {
-    ldap_msgfree($self->{"ldres"});
-    undef $self->{"ldres"};
+  ldap_unbind_s($self->ld) if defined($self->ld);
+  if (defined($self->ldRes)) {
+    ldap_msgfree($self->ldRes);
+    $self->ldres(undef);
   };
-  undef $self->{"ld"};
+  $self->ld(undef);
 
   return (($ret == LDAP_SUCCESS) ? 1 : undef);
 }; # close ------------------------------------------------------------------
@@ -346,11 +369,11 @@ sub delete {
   if (ref($id) eq 'myLDAP::entry') {
     $dn = $id->dn;
   } else {
-    $dn = $self->{"dn"} unless (defined($dn) && ($dn ne ""));
+    $self->dn($dn) unless (defined($dn) && ($dn ne ""));
   };
 
   $dn = normalizeDN($dn);
-  my $ret = ldap_delete_s($self->{"ld"}, $dn) if ($dn ne "");
+  my $ret = ldap_delete_s($self->ld, $dn) if ($dn ne "");
 
   return (($ret == LDAP_SUCCESS) ? 1 : undef);
 }; # delete -----------------------------------------------------------------
@@ -368,7 +391,7 @@ sub add {
   return unless $entry;
 
   my $rec = $entry->makeAddRecord;
-  my $ret = ldap_add_s($self->{"ld"}, $entry->dn, $rec);
+  my $ret = ldap_add_s($self->ld, $entry->dn, $rec);
 
   if ($ret == LDAP_SUCCESS) {
     $entry->clearModifiedFlags;
@@ -392,15 +415,15 @@ sub modifyRDN {
   my ($ret) = 1;
 
   $del = 1 unless (defined($del) && ($del ne ""));
-  $dn = $self->{"dn"} unless (defined($dn) && ($dn ne ""));
+  $self->dn($dn) unless (defined($dn) && ($dn ne ""));
 
   @vals = ldap_explode_dn($dn, 0);
   if (lc($vals[$[]) ne lc($rdn)) {
-    $ret = ldap_modrdn2_s($self->{"ld"}, $dn, $rdn, $del);
+    $ret = ldap_modrdn2_s($self->ld, $dn, $rdn, $del);
     if ($ret == LDAP_SUCCESS) {
       shift(@vals);
       unshift(@vals, ($rdn));
-      $self->{"dn"} = join(@vals);
+      $self->dn(join(@vals));
     };
   };
 
@@ -420,7 +443,7 @@ sub update {
   my ($self, $entry) = @_;
 
   my $rec = $entry->makeModificationRecord;
-  my $ret = ldap_modify_s($self->{"ld"}, $entry->dn, $rec);
+  my $ret = ldap_modify_s($self->ld, $entry->dn, $rec);
 
   if ($ret == LDAP_SUCCESS) {
     $entry->clearModifiedFlags;
@@ -442,9 +465,9 @@ sub setRebindProc {
   my ($self, $proc) = @_;
 
   # Should we try to reinitialize the connection?
-  die "No LDAP connection" unless defined($self->{"ld"});
+  die "No LDAP connection" unless defined($self->ld);
 
-  ldap_set_rebind_proc($self->{"ld"}, $proc);
+  ldap_set_rebind_proc($self->ld, $proc);
 }; # setRebindProc ----------------------------------------------------------
 
 sub setDefaultRebindProc {
@@ -452,9 +475,9 @@ sub setDefaultRebindProc {
 
   $auth = LDAP_AUTH_SIMPLE unless defined($auth);
   die "No LDAP connection"
-    unless defined($self->{"ld"});
+    unless defined($self->ld);
 
-  ldap_set_default_rebind_proc($self->{"ld"}, $dn, $pswd, $auth);
+  ldap_set_default_rebind_proc($self->ld, $dn, $pswd, $auth);
 } # setDefaultRebindProc ----------------------------------------------------
 
 #############################################################################
@@ -466,7 +489,7 @@ sub simpleAuth {
   my ($self, $dn, $pswd) = @_;
   my ($ret);
 
-  $ret = ldap_simple_bind_s($self->{"ld"}, $dn, $pswd);
+  $ret = ldap_simple_bind_s($self->ld, $dn, $pswd);
 
   return (($ret == LDAP_SUCCESS) ? 1 : 0);
 }; # simpleAuth -------------------------------------------------------------

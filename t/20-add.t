@@ -64,7 +64,7 @@ $entry->addValues('gidnumber', '30001');
 $entry->addValues('userpassword', '{SSHA}kGoZtcaIHFPNXt0Rk+3c2InF7sCeqRhB');
 
 $conn->add($entry) or $SOK = 0;
-print "not ok 3\n" unless $SOK;
+printf "not ok 3 (%s)\n", $conn->errorMessage unless $SOK;
 print "ok 3\n" if $SOK;
 
 # - 4 -----------------------------------------------------------------------
