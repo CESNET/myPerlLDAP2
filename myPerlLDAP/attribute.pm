@@ -502,7 +502,7 @@ sub makeModificationRecord {
       addValues2res(\%res, $attr, 'ab', $self->getValues($type));
     };
   } elsif (defined($self->{_cleared})) {
-    warn "$self->makeModificationRecord: Replace mode of _cleared";
+    #warn "$self->makeModificationRecord: Replace mode of _cleared";
     my $counter=0;
     my $addedSomething = 0;
     foreach my $val (@{$self->{VALUES}}) {
@@ -513,7 +513,6 @@ sub makeModificationRecord {
     };
     addValues2res(\%res, $self->name, 'rb', []) if (($counter == 0) or
 						    ($addedSomething == 0));
-    warn Dumper(\%res);
   } elsif ($mode eq 'rb-force') {
     foreach my $type (@{$self->types}) {
       my $attr = $self->name;
