@@ -554,12 +554,13 @@ sub makeModificationRecord {
   foreach $attr (keys %add, keys %replace) {
     die "This should never happen" if (defined($rec{$attr}));
 
-    %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('rb')});
+    %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('rb-force')});
   };
 
   foreach my $attrName (@{$self->attrList}) {
     if (($self->attr($attrName)->getModifiedFlag()) and
 	(!defined($rec{$attrName}))) {
+      #warn "XXXXX: $attrName";
       # TODO: This is nasty. I'm replacing whole attribute, but now
       # I don't have much time ... to do better implementation I will
       # need modify myPerlLDAP::attribute to be able produce modificaion
@@ -579,7 +580,7 @@ sub makeModificationRecord {
     };
   };
 
-#  warn Dumper(\%rec);
+  #warn "Modification record: ".Dumper(\%rec);
   return \%rec;
 };
 
