@@ -110,7 +110,7 @@ sub nextEntry {
       ldap_msgfree($self->{"ldres"});
       undef $self->{"ldres"};
     }
-    return "";
+    return undef;
   };
 
   $dn = ldap_get_dn($self->{"ld"}, $self->{"ldentry"});
