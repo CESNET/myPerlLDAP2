@@ -421,6 +421,21 @@ sub setDefaultRebindProc {
 } # setDefaultRebindProc ----------------------------------------------------
 
 #############################################################################
+# Do a simple authentication, so that we can rebind as another user.
+#
+# Without any change copied from perLDAP-1.4
+#
+sub simpleAuth {
+  my ($self, $dn, $pswd) = @_;
+  my ($ret);
+
+  $ret = ldap_simple_bind_s($self->{"ld"}, $dn, $pswd);
+
+  return (($ret == LDAP_SUCCESS) ? 1 : 0);
+}; # simpleAuth -------------------------------------------------------------
+
+
+#############################################################################
 # Mandatory TRUE return value.
 #
 1;
