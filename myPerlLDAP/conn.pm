@@ -678,7 +678,7 @@ sub initACICTRL {
     # error code is accesible via $self->ld
     return undef unless ($ret==LDAP_SUCCESS);
   } else {
-    die "myPerlLDAP::initACICTRL: XXXXXXXXXXXXXXXXXXX";
+    return undef;
   };
 };
 
