@@ -1,3 +1,9 @@
+libmyperlldap-perl (1.89-1) unstable; urgency=low
+
+  * New upstream version
+
+ -- Jan Tomasek <semik@defiant>  Thu, 18 Nov 2004 20:55:42 +0100
+
 libmyperlldap-perl (1.88-1) unstable; urgency=low
 
   * New upstream version
