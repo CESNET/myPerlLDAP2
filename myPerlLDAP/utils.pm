@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-package myPerlLDAP::Utils;
+package myPerlLDAP::utils;
 
 use strict;
 use vars qw($VERSION @ISA %EXPORT_TAGS);
