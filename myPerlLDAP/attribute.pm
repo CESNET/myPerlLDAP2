@@ -498,7 +498,7 @@ sub makeModificationRecord {
       addValues2res(\%res, $attr, 'ab', $self->getValues($type));
     };
   } elsif (defined($self->{_cleared})) {
-    warn "$self->makeModificationRecord: Replace mode";
+    #warn "$self->makeModificationRecord: Replace mode";
     foreach my $val (@{$self->{VALUES}}) {
       my $attr = $self->name;
       $attr = "$attr;$val->[1]" if ($val->[1]);
