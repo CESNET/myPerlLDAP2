@@ -51,19 +51,35 @@ my $res = $conn->search($C::TestBase, LDAP_SCOPE_SUBTREE,
 print "not ok 3\n" unless $SOK;
 print "ok 3\n" if $SOK;
 
+$res->cacheLocaly;
+
 $res->sort('sn', 'givenName');
 
 # - 4 -----------------------------------------------------------------------
 $SOK = 1;
-my $entry = $res->nextEntry or $SOK = 0;
 my $c1 = 0;
-my $dn = $entry->dn if $entry;
-while ($entry) {
+while (my $entry = $res->nextEntry) {
   my $dump = join("\n", @{$entry->XML});
 #  warn $entry->getValues('cn')->[0];
   $entry = $res->nextEntry;
   $c1++;
 };
+$SOK = 0 unless $c1;
 
 print "not ok 4\n" unless $SOK;
 print "ok 4\n" if $SOK;
+
+# - 5 -----------------------------------------------------------------------
+$SOK = 1;
+$res->reset;
+my $c2 = 0;
+while (my $entry = $res->nextEntry) {
+  my $dump = join("\n", @{$entry->XML});
+#  warn $entry->getValues('cn')->[0];
+  $entry = $res->nextEntry;
+  $c2++;
+};
+$SOK = 0 unless $c2==$c1;
+
+print "not ok 5\n" unless $SOK;
+print "ok 5\n" if $SOK;
