@@ -20,7 +20,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # #############################################################################
 
-BEGIN { $| = 1; print "1..4\n";}
+BEGIN { $| = 1; print "1..6\n";}
 #END {print "not ok 1\n" unless $SOK;}
 
 use lib qw(/home/honza/proj/myPerlLDAP);
@@ -63,12 +63,26 @@ $entry->addValues('uidnumber', '30001');
 $entry->addValues('gidnumber', '30001');
 $entry->addValues('userpassword', '{SSHA}kGoZtcaIHFPNXt0Rk+3c2InF7sCeqRhB');
 
-$conn->add($entry) or $SOK = 0;
-printf "not ok 3 (%s)\n", $conn->errorMessage unless $SOK;
-print "ok 3\n" if $SOK;
+if ($entry->isModified) {
+  print "ok 3\n";
+} else {
+  print "not ok 3\n";
+};
 
 # - 4 -----------------------------------------------------------------------
+$conn->add($entry) or $SOK = 0;
+printf "not ok 4 (%s)\n", $conn->errorMessage unless $SOK;
+print "ok 4\n" if $SOK;
+
+# - 5 -----------------------------------------------------------------------
+if ($entry->isModified) {
+  print "not ok 5\n";
+} else {
+  print "ok 5\n";
+};
+
+# - 6 -----------------------------------------------------------------------
 $SOK = 1;
 $conn->close or $SOK = 0;
-print "not ok 4\n" unless $SOK;
-print "ok 4\n" if $SOK;
+print "not ok 6\n" unless $SOK;
+print "ok 6\n" if $SOK;

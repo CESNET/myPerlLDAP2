@@ -488,6 +488,17 @@ sub clearModifiedFlags {
   };
 };
 
+sub isModified {
+  my $self = shift;
+
+  return 1 if @{$self->attrChanges};
+  foreach my $attr (@{$self->attrList}) {
+    return 1 if $self->attr($attr)->modified;
+  };
+
+  return 0;
+};
+
 sub makeModificationRecord {
   my $self = shift;
 

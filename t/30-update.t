@@ -20,7 +20,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 # #############################################################################
 
-BEGIN { $| = 1; print "1..5\n";}
+BEGIN { $| = 1; print "1..8\n";}
 #END {print "not ok 1\n" unless $SOK;}
 
 use lib qw(/home/honza/proj/myPerlLDAP);
@@ -56,18 +56,37 @@ print "ok 3\n" if $SOK;
 # - 4 -----------------------------------------------------------------------
 $SOK = 1;
 my $entry = $res->nextEntry or $SOK = 0;
+print "not ok 4\n" unless $SOK;
+print "ok 4\n" if $SOK;
+
+# - 5 -----------------------------------------------------------------------
+if ($entry->isModified) {
+  print "not ok 5\n";
+} else {
+  print "ok 5\n";
+};
+
+# - 6 -----------------------------------------------------------------------
 $entry->addValues('description', 'Popiska');
 $entry->removeAttr('givenName');
 $entry->removeAttr('mail');
 $entry->addValues('givenName', 'Trotl');
 $entry->addValues('cn', 'BFU');
 
-$conn->update($entry) or $SOK = 0;
-print "not ok 4\n" unless $SOK;
-print "ok 4\n" if $SOK;
+if ($entry->isModified) {
+  print "ok 6\n";
+} else {
+  print "not ok 6\n";
+};
 
-# - 5 -----------------------------------------------------------------------
+# - 7 -----------------------------------------------------------------------
+$SOK = 1;
+$conn->update($entry) or $SOK = 0;
+print "not ok 7\n" unless $SOK;
+print "ok 7\n" if $SOK;
+
+# - 8 -----------------------------------------------------------------------
 $SOK = 1;
 $conn->close or $SOK = 0;
-print "not ok 5\n" unless $SOK;
-print "ok 5\n" if $SOK;
+print "not ok 8\n" unless $SOK;
+print "ok 8\n" if $SOK;
