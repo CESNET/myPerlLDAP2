@@ -34,7 +34,7 @@ sub new {
     $self->{"port"} = $hash->{"port"} if defined($hash->{"port"});
     $self->{"binddn"} = $hash->{"bind"} if defined($hash->{"bind"});
     $self->{"bindpasswd"} = $hash->{"pswd"} if defined($hash->{"pswd"});
-    $self->{"certdb"} = $hash->{"cert"} if defined($hash->{"cert"});
+    $self->{"certdb"} = $hash->{"certdb"} if defined($hash->{"certdb"});
   } else {
     my ($host, $port, $binddn, $bindpasswd, $certdb, $authmeth) = @_;
 
