@@ -74,7 +74,7 @@ $VERSION = "1.70";
 # TODO: For SSL use an betther flag than stupid certdb ... OpenLDAP client
 # isn't now able to work with certs I think.
 
-sub constructor {
+sub construct {
   my $proto = shift;
   my $class = ref($proto) || $proto;
 
@@ -122,7 +122,7 @@ sub constructor {
 # It will initalize connection to LDAP server!
 #
 sub new {
-  my $self = constructor(@_);
+  my $self = construct(@_);
 
   return unless $self;
   return unless $self->init();
