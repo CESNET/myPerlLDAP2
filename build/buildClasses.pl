@@ -1,5 +1,7 @@
 #!/usr/bin/perl -w
 
+use lib qw(. ..);
+
 use strict;
 use Mozilla::OpenLDAP::Conn;
 use Mozilla::OpenLDAP::API qw(LDAP_PORT LDAPS_PORT LDAP_SCOPE_BASE);
@@ -151,7 +153,6 @@ sub printAttributeHash {
     $ret .= "NAME=??? ".$attr->{'origAttr'}."\n";
   };
 
-  # TODO: @{$self}{'OID', 'EQUALITY'} = ('2.5.4.41', 'caseIgnoreMatch432423432');
   $ret .= "  OID=".$attr->{'oid'}."\n" if (defined($attr->{'oid'}));
   $ret .= "  EQUALITY=".$attr->{'equality'}."\n" if (defined($attr->{'equality'}));
   $ret .= "  SYNTAX=".$attr->{'syntax'}."\n" if (defined($attr->{'syntax'}));
@@ -166,8 +167,9 @@ sub printAttributeHash {
   return($ret);
 };
 
-
-my $autoClassesPath = "/home/honza/proj/myPerlLDAP/myPerlLDAP/Attribute/.auto";
+my $originalDir = `pwd`; chomp($originalDir);
+my $autoClassesPath = ".auto";
+my $attrClassesPath = "myPerlLDAP/Attribute";
 
 sub attributeHash2Class {
   my($attr) = @_;
@@ -185,13 +187,13 @@ sub attributeHash2Class {
   };
 
   if ((!defined($syntax)) and (!defined($attr->{sup}))) {
-    warn "Undefined syntax and superclass for object $attr->{oid} can't continue\n";
+    warn "Undefined syntax and superclass for object $attr->{oid} skiping\n";
     #printAttributeHash($attr);
     return 0;
   };
 
   if ((defined($syntax)) and (!defined($superclasses->{$syntax}))) {
-    warn "Unknown syntax '$syntax' for object $attr->{oid} can't continue\n";
+    warn "Unknown syntax '$syntax' for object $attr->{oid} skiping\n";
     #printAttributeHash($attr);
     return 0;
   };
@@ -210,23 +212,34 @@ sub attributeHash2Class {
     $name = lc $name;
     my $init_code = "";
 
-    $init_code .= "  \$self->{OID} = '$attr->{oid}';\n" if (defined($attr->{'oid'}));
-    $init_code .= "  \$self->{EQUALITY} = '$attr->{equality}';\n" if (defined($attr->{'equality'}));
-    $init_code .= "  \$self->{SYNTAX} = '$syntax'; # $superclasses->{$syntax}\n" if (defined($syntax));
-    #print "  SUP=".$attr->{'sup'}."\n" if (defined($attr->{'sup'}));
-    $init_code .= "  \$self->{DESC} = '$attr->{desc}';\n" if (defined($attr->{'desc'}));
-    $init_code .= "  \$self->{SUBSTR} = '$attr->{substr}';\n" if (defined($attr->{'substr'}));
-    $init_code .= "  \$self->{ORDERING} = '$attr->{ordering}';\n" if (defined($attr->{'ordering'}));
-    $init_code .= "  \$self->{USAGE} = '$attr->{usage}';\n" if (defined($attr->{'usage'}));
-    $init_code .= "  \$self->{LENGTH} = $length;\n" if (defined($length));
-    $init_code .= "  \$self->{SINGLEVALUE} = 1;\n" if (defined($attr->{'singleValue'}));
-    $init_code .= "  \$self->{READONLY} = 1;\n" if (defined($attr->{'readOnly'}));
-    chomp($init_code);
+    my (@k, @v);
+    do { push @k, "'OID'";
+	 push @v, "'$attr->{oid}'"} if (defined($attr->{'oid'}));
+    do { push @k, "'EQUALITY'";
+	 push @v, "'$attr->{equality}'"} if (defined($attr->{'equality'}));
+    do { push @k, "'SYNTAX'";
+	 push @v, "'$syntax'"} if (defined($syntax));
+    do { push @k, "'DESC'";
+	 push @v, "'$attr->{desc}'"} if (defined($attr->{'desc'}));
+    do { push @k, "'SUBSTR'";
+	 push @v, "'$attr->{substr}'"} if (defined($attr->{'substr'}));
+    do { push @k, "'ORDERING'";
+	 push @v, "'$attr->{ordering}'"} if (defined($attr->{'ordering'}));
+    do { push @k, "'USAGE'";
+	 push @v, "'$attr->{usage}'"} if (defined($attr->{'usage'}));
+    do { push @k, "'LENGTH'";
+	 push @v, $length} if (defined($length));
+    do { push @k, "'SINGLEVALUE'";
+	 push @v, 1} if (defined($attr->{'singleValue'}));
+    do { push @k, "'READONLY'";
+	 push @v, 1} if (defined($attr->{'readOnly'}));
+    $init_code = '  @{$self}{'.join(",\n           ", @k)."} =
+    {".join(",\n     ", @v)."};\n";
 
     $classDefiniton = "# $attr->{origAttr}";
     $classHash = "# ".join("\n# ", split(/\n/, printAttributeHash($attr)));
 
-    open(CLASS, ">$autoClassesPath/$name\.pm") or die "Can't open file $autoClassesPath/$name\.pm for writing";
+    open(CLASS, ">$originalDir/$attrClassesPath/$autoClassesPath/$name\.pm") or die "Can't open file $attrClassesPath/$autoClassesPath/$name\.pm for writing";
     print CLASS <<EOF
 #!/usr/bin/perl -w
 
@@ -261,6 +274,7 @@ $init_code
 EOF
 ;
     close(CLASS);
+    symlink("$autoClassesPath/$name\.pm", "$name\.pm") or die "Can't create link $attrClassesPath/$autoClassesPath/$name\.pm->$attrClassesPath/$name\.pm: $!";
   };
 
   return 1;
@@ -318,8 +332,16 @@ $entry = $conn->search($subSchemaSubEntry,
 		       ("attributeTypes", "ldapSyntaxes"))
   or die "Can't read schema";
 
-my ($attr, $syn, $a, %attrList);
+# clean old classes, prepare place for new
+mkdir("$attrClassesPath/$autoClassesPath");
+opendir(DIR, $attrClassesPath) or die "Can't opendir $attrClassesPath: $!";
+my @files =  grep { (!/^\.*$/) and (-l "$attrClassesPath/$_")} readdir(DIR);
+closedir(DIR);
+unlink map { "$attrClassesPath/$_" } @files;
+# change working dir
+chdir($attrClassesPath) or die "Can't chdir to $attrClassesPath: $!";
 
+my ($attr, $syn, $a, %attrList);
 while ($entry) {
   foreach $attr (@{$entry->{'attributetypes'}}) {
     $a = parseAttributeType($attr);
