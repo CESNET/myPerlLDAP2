@@ -1,4 +1,9 @@
 2004-05-19  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.84
+	* myPerlLDAP/conn.pm, myPerlLDAP/searchResult.pm:
+	searchResults needs owner=conn set because it is expected to set for each entry it returns.
+
+2004-05-19  Jan Tomasek  <jan@tomasek.cz>
 	* Version: 1.83
 	* t/20-add.t, t/30-update.t, t/C.pm: New tests for new functions.
 	* myPerlLDAP/entry.pm: Updated for incremental attribute values update.
