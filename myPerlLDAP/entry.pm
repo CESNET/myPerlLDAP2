@@ -301,4 +301,27 @@ sub makeModificationRecord {
   return \%rec;
 };
 
+sub getXML {
+  my $self = shift;
+  my @ret;
+  my $attr;
+
+  push @ret, "<dsml:entry dn=\"".$self->getDN."\">";
+  foreach $attr ($self->getAttributesList) {
+    push @ret, map { "  $_"} @{$self->attr($attr)->getXML};
+  };
+  push @ret, "</dsml:entry>";
+
+  return \@ret;
+};
+
+sub getXML_String {
+  my $self = shift;
+  my $ident = shift;
+
+  $ident = "" unless $ident;
+
+  return join("\n", map { "$ident$_" } @{$self->getXML})."\n";
+};
+
 1;
