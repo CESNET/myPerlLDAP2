@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-package myPerlLDAP::SearchResults;
+package myPerlLDAP::searchResults;
 
 use Mozilla::OpenLDAP::API 1.4 qw(ldap_first_entry ldap_next_entry ldap_msgfree ldap_get_dn ldap_first_attribute ldap_next_attribute ldap_get_values_len ldap_ber_free ldap_count_entries);
 use strict;
@@ -67,7 +67,7 @@ sub nextEntry {
   my ($attr, $lcattr, $ldentry, $berv, $dn, $count);
   my ($ber) = \$berv;
 
-  my $entry = new myPerlLDAP::Entry;
+  my $entry = new myPerlLDAP::entry;
 
   if ($self->{"ldfe"} == 1) {
     return unless defined($self->{"ldres"});
