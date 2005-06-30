@@ -1,3 +1,12 @@
+2005-06-30  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.92
+	* myPerlLDAP/utils.pm: Pridana Funkce na detekci jestli se jedna o
+	binarni string (ma hodnoty znaku <32).
+	* myPerlLDAP/searchResult.pm: *** empty log message ***
+	* myPerlLDAP/attribute.pm: Pridna detekce binarnich atributu a
+	mimeencodovani v pripade LDIFu jeste by to chtelo vyresit
+	syslogovani a pripadne i errory co jdou na stderr.
+
 2005-01-26  Jan Tomasek  <jan@tomasek.cz>
 	* Version: 1.91
 	* myPerlLDAP/conn.pm: Pridano volitelne logovani zmen do syslogu
