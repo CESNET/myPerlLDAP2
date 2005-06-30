@@ -28,7 +28,8 @@ use Carp;
 use perlOpenLDAP::API qw(LDAP_SUCCESS LDAP_CONSTRAINT_VIOLATION
 			 LDAP_TYPE_OR_VALUE_EXISTS LDAP_NO_SUCH_OBJECT);
 use myPerlLDAP::attribute;
-use myPerlLDAP::utils qw(quote4XML quote4HTTP);
+use MIME::Base64;
+use myPerlLDAP::utils qw(quote4XML quote4HTTP isBinary);
 use Storable qw(dclone);
 use Data::Dumper;
 use vars qw($AUTOLOAD @ISA %fields);
@@ -631,7 +632,13 @@ sub LDIF {
     foreach $value (@{$self->getValues($type)}) {
       my $TYPE = "";
       $TYPE = ";$type" if ($type);
-      push @ret, $self->name."$TYPE: $value";
+
+      if (isBinary($value)) {
+	my @enc = split("\n", encode_base64($value));
+	push @ret, $self->name."$TYPE\:\: ".join("\n ", @enc);
+      } else {
+	push @ret, $self->name."$TYPE: $value";
+      };
     };
   };
 
