@@ -35,6 +35,7 @@
 package myPerlLDAP::utils;
 
 use strict;
+use Data::Dumper;
 use vars qw(@ISA %EXPORT_TAGS);
 
 use perlOpenLDAP::API qw(LDAP_SCOPE_SUBTREE LDAP_SCOPE_BASE LDAP_SCOPE_ONELEVEL ldap_explode_dn);
@@ -44,7 +45,9 @@ use perlOpenLDAP::API qw(LDAP_SCOPE_SUBTREE LDAP_SCOPE_BASE LDAP_SCOPE_ONELEVEL 
 		all => [qw(normalizeDN
 			   str2Scope
 			   quote4XML
-			   quote4HTTP)]
+			   quote4HTTP
+			   isBinary
+			   )]
 		);
 # Add Everything in %EXPORT_TAGS to @EXPORT_OK
 Exporter::export_ok_tags('all');
@@ -112,6 +115,16 @@ sub quote4HTTP {
   $bla =~ s/ /%20/g;
 
   return $bla;
+};
+
+sub isBinary {
+  my $val = shift;
+
+  while (my $char = chop($val)) {
+    return 1 if (ord($char)<32);
+  };
+
+  return undef;
 };
 
 # Konec pohadky ;-)
