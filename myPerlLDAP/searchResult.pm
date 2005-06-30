@@ -122,7 +122,7 @@ sub nextEntry {
     my ($attr, $lcattr, $ldentry, $berv, $dn, $count);
     my ($ber) = \$berv;
 
-    my $entry = new myPerlLDAP::entry;
+    my $entry = new myPerlLDAP::entry();
     $entry->owner($self->owner);
 
     if ($self->{"ldfe"} == 1) {
