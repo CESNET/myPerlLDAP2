@@ -54,6 +54,7 @@ use vars qw($AUTOLOAD @ISA %fields);
 	   attrInit    => {},
 	   attrMap     => {},
 	   aci         => undef,
+	   xmlAttribute=> {},
 	  );
 
 sub new {
@@ -283,7 +284,16 @@ sub XML {
   my @ret;
   my $attr;
 
-  push @ret, "<dsml:entry dn=\"".quote4XML($self->dn)."\" urldn=\"".quote4XML(quote4HTTP($self->dn))."\" xmlns:dsml=\"http://www.dsml.org/DSML\">";
+  my @entryAttrs;
+  foreach $attr (keys %{$self->{xmlAttribute}}) {
+    push @entryAttrs,
+      sprintf('%s="%s"', $attr, $self->{xmlAttribute}->{$attr});
+  };
+
+  push @ret, "<dsml:entry dn=\"".quote4XML($self->dn).
+    "\" urldn=\"".quote4XML(quote4HTTP($self->dn)).
+    "\" xmlns:dsml=\"http://www.dsml.org/DSML\" ".
+    join(" ", @entryAttrs).">";
   foreach $attr (@{$self->attrList}) {
     push @ret, map { "  $_"} @{$self->attr($attr)->XML};
   };
@@ -583,6 +593,20 @@ sub makeModificationRecord {
   #warn "Modification record: ".Dumper(\%rec);
   return \%rec;
 };
+
+sub xmlAttribute {
+  my $self = shift;
+  my $attr = shift;
+  my $value = shift;
+
+  if (!defined($value)) {
+    # Cteni hodnoty
+    return $self->{xmlAttribute}->{$attr};
+  } else {
+    # Zapis hodnoty
+    return $self->{xmlAttribute}->{$attr} = $value;
+  };
+}
 
 
 1;
