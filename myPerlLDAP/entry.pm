@@ -361,6 +361,8 @@ sub addValues {
       $class = $self->attrMap->{$attrName};
     } else {
       $class = myPerlLDAP::attribute::classNamePrefix().$attrName;
+#      my $sig_die = $SIG{__DIE__};
+#      undef $SIG{__DIE__};
       if (eval "require $class" ) {
       } else {
 	if (($myPerlLDAP::attribute::_D) and ($attrName ne "")) {
@@ -368,6 +370,7 @@ sub addValues {
 	};
 	$class = 'myPerlLDAP::attribute';
       };
+#      $SIG{__DIE__} = $sig_die;
     };
 
     $attr = $class->new($attrName);
