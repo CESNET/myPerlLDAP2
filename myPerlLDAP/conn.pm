@@ -66,6 +66,8 @@ $SYSLOG = 0;
 	   dn => undef,
 	   aciCTRLSuported => undef,
 	   aciCTRL => undef,
+	   retry => 0,
+	   delay => 1,
 	  );
 
 #############################################################################
@@ -100,6 +102,8 @@ sub construct {
     $self->bindDN($hash->{"bind"}) if defined($hash->{"bind"});
     $self->bindPasswd($hash->{"pswd"}) if defined($hash->{"pswd"});
     $self->certDB($hash->{"certdb"}) if defined($hash->{"certdb"});
+    $self->retry($hash->{"retry"}) if defined($hash->{"retry"});
+    $self->delay($hash->{"delay"}) if defined($hash->{"delay"});
   } else {
     my ($host, $port, $binddn, $bindpasswd, $certdb, $authmeth) = @_;
 
@@ -183,7 +187,12 @@ sub init {
   return unless ($ret == LDAP_SUCCESS);
 
   $self->ld($ld);
-  $ret = ldap_simple_bind_s($ld, $self->bindDN, $self->bindPasswd);
+  my $count = 0;
+  do {
+    sleep($self->delay) if ($count++ > 0);
+
+    $ret = ldap_simple_bind_s($ld, $self->bindDN, $self->bindPasswd);
+  } while (($ret != LDAP_SUCCESS) and ($count < $self->retry));
 
   $self->{aciCTRLSuported} = undef;
   if (($ret == LDAP_SUCCESS) and ($self->{bindPasswd})) {
