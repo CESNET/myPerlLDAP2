@@ -1,3 +1,17 @@
+2007-05-09  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.93
+	* myPerlLDAP/conn.pm: Added retry and delay args for connect function.
+	* myPerlLDAP/attribute.pm: Opravy vyvareni zmenoveho zaznamu v
+	situaci kdy byly odstraneny vsechny hodnoty - funkce spatne
+	pracovala s subtypy.
+	* myPerlLDAP/entry.pm: Zakomentovani sigdie handleru... netusim proc.
+	* myPerlLDAP/utils.pm: Update fce pro vytvareni LDIFu - base64 se
+	koduje i kdyz string obsahuje data >127.
+
+2005-09-13  Jan Tomasek  <jan@tomasek.cz>
+	* myPerlLDAP/entry.pm: Pridana propery xmlAttribute ktera umoznuje
+	protlacit libovolny atributy do DSML prezentace entry.
+
 2005-06-30  Jan Tomasek  <jan@tomasek.cz>
 	* Version: 1.92
 	* myPerlLDAP/utils.pm: Pridana Funkce na detekci jestli se jedna o

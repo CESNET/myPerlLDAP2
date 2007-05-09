@@ -1,3 +1,9 @@
+libmyperlldap-perl (1.93) unstable; urgency=low
+
+  * NUV
+
+ -- Jan Tomasek <jan@tomasek.cz>  Wed,  9 May 2007 14:11:59 +0200
+
 libmyperlldap-perl (1.92) unstable; urgency=low
 
   * NUV
