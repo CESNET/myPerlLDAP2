@@ -165,6 +165,7 @@ sub clearValues {
 
   $self->error(LDAP_SUCCESS);
 
+  push @{$self->{_clearedTypes}}, @{$self->types};
   $self->{VALUES} = undef;
   $self->setModifiedFlag();
   $self->{_cleared} = 1;
@@ -481,7 +482,7 @@ sub makeModificationRecord {
     my $mode   = shift;
     my $values = shift;
 
-    if ((scalar @{$values} == 1) and ($values->[0] eq '')) {
+    if ((scalar @{$values} == 1) and ($values->[0] eq '') and ($mode ne 'rb')) {
       return 0;
     } else {
       $res->{$attr}->{$mode} = [] if (!defined($res->{$attr}->{$mode}));
@@ -506,14 +507,21 @@ sub makeModificationRecord {
     #warn "$self->makeModificationRecord: Replace mode of _cleared";
     my $counter=0;
     my $addedSomething = 0;
+    my %usedSubType = {};
     foreach my $val (@{$self->{VALUES}}) {
       my $attr = $self->name;
+      $usedSubType{$val->[1]}++;
       $attr = "$attr;$val->[1]" if ($val->[1]);
       $addedSomething = 1 if addValues2res(\%res, $attr, 'rb', [$val->[0]]);
       $counter++;
     };
-    addValues2res(\%res, $self->name, 'rb', []) if (($counter == 0) or
-						    ($addedSomething == 0));
+
+    # 3. 5. 2007 - odstraneno protoze jsem funkci addValues2res
+    # umoznil v pripade ze je pozadavek na zmenu v rezimu 'rb'
+    # generovat zmenovy zaznam. Nize uvedeny kod nefunguval s subtypy.
+
+    #addValues2res(\%res, $self->name, 'rb', []) if (($counter == 0) or
+    #						    ($addedSomething == 0));
   } elsif ($mode eq 'rb-force') {
     foreach my $type (@{$self->types}) {
       my $attr = $self->name;
@@ -670,3 +678,5 @@ sub sortValuesDone {
   my $self = shift;
   delete $self->{_SV};
 };
+
+1;
