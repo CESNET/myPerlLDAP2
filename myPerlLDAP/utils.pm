@@ -121,7 +121,7 @@ sub isBinary {
   my $val = shift;
 
   while (my $char = chop($val)) {
-    return 1 if (ord($char)<32);
+    return 1 if ((ord($char)<32) or (ord($char)>127));
   };
 
   return undef;
