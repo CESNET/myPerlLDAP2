@@ -507,10 +507,10 @@ sub makeModificationRecord {
     #warn "$self->makeModificationRecord: Replace mode of _cleared";
     my $counter=0;
     my $addedSomething = 0;
-    my %usedSubType = {};
+    my %usedSubType = ();
     foreach my $val (@{$self->{VALUES}}) {
       my $attr = $self->name;
-      $usedSubType{$val->[1]}++;
+      $usedSubType{$val->[1] || ''}++;
       $attr = "$attr;$val->[1]" if ($val->[1]);
       $addedSomething = 1 if addValues2res(\%res, $attr, 'rb', [$val->[0]]);
       $counter++;
