@@ -1,3 +1,8 @@
+2007-05-11  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.94
+	* myPerlLDAP/attribute.pm: Opraveny dva warningy co mi chodily
+	kazdou hodinu.
+
 2007-05-09  Jan Tomasek  <jan@tomasek.cz>
 	* Version: 1.93
 	* myPerlLDAP/conn.pm: Added retry and delay args for connect function.
