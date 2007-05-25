@@ -57,6 +57,7 @@ use vars qw($AUTOLOAD @ISA %fields);
 	   owner         => undef,
 	   sortingEnabled=> undef,
 	   _sorted       => 1,
+	   showURL       => undef,
 	  );
 
 =head1 NAME
@@ -581,12 +582,29 @@ sub className {
   return $name;
 };
 
-sub classNamePrefix {
-  return 'myPerlLDAP::attribute::';
+sub showURL {
+  my $self = shift;
+
+  if (@_) {
+    return $self->{showURL} = shift;
+  };
+
+  return $::c{ref $self}{showURL} if defined($::c{ref $self}{showURL});
+  return $self->{showURL};
 };
 
 sub xmlAttributeArgs {
-  return undef;
+  my $self = shift;
+
+  if ($self->showURL) {
+    return ' url="'.quote4XML($self->showURL).'"';
+  } else {
+    return undef;
+  };
+};
+
+sub classNamePrefix {
+  return 'myPerlLDAP::attribute::';
 };
 
 sub xmlValueArgs {
