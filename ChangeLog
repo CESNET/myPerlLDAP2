@@ -1,3 +1,9 @@
+2007-05-25  Jan Tomasek  <jan@tomasek.cz>
+	* Version: 1.95
+	* myPerlLDAP/attribute.pm: ShowURL je pouzivano u spesl objektu
+	jakou jsou DN kdy je to odkaz k funkci ktera umi dany odkaz
+	zobrazit nebo u X509 certifikatu.
+
 2007-05-11  Jan Tomasek  <jan@tomasek.cz>
 	* Version: 1.94
 	* myPerlLDAP/attribute.pm: Opraveny dva warningy co mi chodily
