@@ -55,6 +55,7 @@ use vars qw($AUTOLOAD @ISA %fields);
 	   attrMap     => {},
 	   aci         => undef,
 	   xmlAttribute=> {},
+	   virtual     => {},
 	  );
 
 sub new {
@@ -240,6 +241,7 @@ sub attrList {
 
 sub LDIF {
   my $self = shift;
+  my $virtual = shift;
 
   $self->error(LDAP_SUCCESS);
 
@@ -250,7 +252,11 @@ sub LDIF {
   push @out, ("dn: ".$self->dn);
   foreach $attr (@{$self->attrList}) {
     if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
-      push @out, @{$self->attr($attr)->LDIF};
+      my $A = $self->attr($attr);
+      if ((not (defined($self->{virtual}->{lc $A->name})) or
+          ((defined($self->{virtual}->{lc $A->name})) and ($virtual)))) {
+	push @out, @{$A->LDIF};
+      };
     }; # else: Attribute which have no value doesn't exists.
   };
 
@@ -266,10 +272,11 @@ sub LDIF {
 
 sub LDIFString {
   my $self = shift;
+  my $virtual = shift;
 
   $self->error(LDAP_SUCCESS);
 
-  return join("\n", @{$self->LDIF})."\n";
+  return join("\n", @{$self->LDIF($virtual)})."\n";
 }; # LDIFString ---------------------------------------------------------------
 
 # #############################################################################
@@ -484,7 +491,9 @@ sub makeAddRecord {
   my $attr;
   foreach $attr (@{$self->attrList}) {
     if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
-      %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('ab')});
+      unless ($self->{virtual}->{lc $attr}) {
+	%rec = (%rec, %{$self->attr($attr)->makeModificationRecord('ab')});
+      };
     }; # else: Attribute which have no value doesn't exists.
   };
 
@@ -561,13 +570,17 @@ sub makeModificationRecord {
   foreach $attr (keys %delete) {
     die "This should never happen" if (defined($rec{$attr}));
 
-    $rec{$attr}->{rb}=[];
+    unless ($self->{virtual}->{lc $attr}) {
+      $rec{$attr}->{rb}=[];
+    };
   };
 
   foreach $attr (keys %add, keys %replace) {
     die "This should never happen" if (defined($rec{$attr}));
 
-    %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('rb-force')});
+    unless ($self->{virtual}->{lc $attr}) {
+      %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('rb-force')});
+    };
   };
 
   foreach my $attrName (@{$self->attrList}) {
@@ -578,7 +591,9 @@ sub makeModificationRecord {
       # I don't have much time ... to do better implementation I will
       # need modify myPerlLDAP::attribute to be able produce modificaion
       # record for this.
-      %rec = (%rec, %{$self->attr($attrName)->makeModificationRecord('rb')});
+      unless ($self->{virtual}->{lc $attrName}) {
+	%rec = (%rec, %{$self->attr($attrName)->makeModificationRecord('rb')});
+      };
     };# else -> attribute was added as new and after that it was modified
       # I not process it here because it is being added as new attr ...
   };
@@ -588,7 +603,9 @@ sub makeModificationRecord {
     if (defined($rec{$attrName}->{rb})) {
       my $vals = $rec{$attrName}->{rb};
       if ((scalar @$vals == 1) and ($vals->[0] eq '')) {
-	$rec{$attrName}->{rb} = [];
+	unless ($self->{virtual}->{lc $attrName}) {
+	  $rec{$attrName}->{rb} = [];
+	};
       };
     };
   };
