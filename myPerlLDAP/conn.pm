@@ -678,7 +678,11 @@ sub readACI {
   if ($self->aciCTRLSuported) {
     my $ctrl;
     my $ret = ldap_create_rights_control($self->ld,
-					 "",#as actualy loged user
+					 # puvodni kod pro SunONE
+					 # pouzival jen "" jako
+					 # identifikaci aktualne
+					 # prihlaseneho uzivatele
+					 "dn:".$self->bindDN, #as actualy loged user
 					 \@attrs,#list of attrs we are interested in
 					 1,#critical? YES!
 					 $ctrl);
@@ -689,7 +693,11 @@ sub readACI {
     #push @attrs, 'aclRights';
     $ret = ldap_search_ext_s($self->ld,
 			     $dn, LDAP_SCOPE_BASE, '(objectClass=*)',
-			     ['aclRights'],0,
+			     # puvodni kod vystacil s pozadavkem na
+			     # aclRights, 389 to dela dost jinak, je
+			     # potreba mu pridat seznam atribitutu
+			     # ktery chceme zkoumat
+			     [@attrs,'aclRights'],0,
 			     [$ctrl],
 			     undef,
 			     undef,0,

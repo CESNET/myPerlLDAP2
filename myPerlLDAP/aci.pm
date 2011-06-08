@@ -114,6 +114,55 @@ sub initFromHash {
   };
 };
 
+# mapping from DS 389 names to Sun One names
+# http://www.redhat.com/docs/manuals/dir-server/8.1/admin/Viewing_the_ACIs_for_an_Entry-Get_Effective_Rights_Control.html
+# http://docs.sun.com/app/docs/doc/820-2491/bcaoh?l=ru&a=view
+my $ds389_Sun1 = {
+		  # attribute level
+		  'r' => 'read',
+		  's' => 'search',
+		  'w' => 'write',
+		  'o' => 'delete',
+		  'c' => 'compare',
+		  'W' => 'self-write',
+		  'O' => 'self-delete',
+		  # entry level
+		  'a' => 'add',
+		  'd' => 'delete',
+		  'n' => 'rename_dn',
+		  'v' => 'read',
+		 };
+
+sub initFromHash389 {
+  my $self = shift;
+  my $hash = shift;
+
+  $self->{_aci} = {};
+  $self->{_aci}->{entry} = {};
+  $self->{_aci}->{attributes} = {};
+
+  # aclrights:none, objectClass:rsc, uid:rsc, userPassword:wo, cn:rsc, taildegree:rscwo, headdegree:rscwo
+  my $any_edit = 0;
+  foreach my $rights (@{$hash->{attributelevelrights}}) {
+    foreach my $one_a_rights (split(/ *, */, $rights)) {
+      my ($attribute, $rights) = split(/:/, $one_a_rights);
+      next if ($rights eq 'none');
+      foreach my $permision (split(//, $rights)) {
+	$self->_aci->{attributes}->{lc $attribute}->{$ds389_Sun1->{$permision}}=1;
+	$any_edit = 1 if ($permision =~ /w/i);
+      };
+    };
+  };
+
+  foreach my $rights (@{$hash->{entrylevelrights}}) {
+    next if ($rights eq 'none');
+    foreach my $permision (split(//, $rights)) {
+      $self->_aci->{entry}->{$ds389_Sun1->{$permision}}=1;
+    };
+  };
+  $self->_aci->{entry}->{write}=1 if ($any_edit);
+};
+
 sub init {
   my $self = shift;
   my $ld = shift;
@@ -132,7 +181,7 @@ sub init {
     };
   };
 
-  $self->initFromHash(\%hash);
+  $self->initFromHash389(\%hash);
 
   die "More than result to search with LDAP_SCOPE_BASE?! Imposible"
     if (ldap_next_entry($ld,$res)>0);
