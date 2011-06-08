@@ -23,7 +23,7 @@
 BEGIN { $| = 1; print "1..15\n";}
 #END {print "not ok 1\n" unless $SOK;}
 
-use lib qw(/home/honza/proj/myPerlLDAP);
+use lib qw(/home/semik/proj /home/semik/proj/perlOpenLDAP/blib/arch/auto /home/semik/proj/myPerlLDAP);
 use strict;
 use perlOpenLDAP::API 1.5 qw(/.+/);
 use myPerlLDAP::conn;
