@@ -469,7 +469,7 @@ sub clearModifiedFlag {
   my $self = shift;
 
   $self->modified(undef);
-  $self->{_VALUES} = dclone($self->{VALUES});
+  $self->{_VALUES} = dclone($self->{VALUES}) if (exists($self->{VALUES}));
 };
 
 sub makeModificationRecord {
