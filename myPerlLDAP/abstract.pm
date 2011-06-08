@@ -81,3 +81,5 @@ sub AUTOLOAD {
     carp "Can't access method '$name' in class $class";
   };
 };
+
+1;
