@@ -423,9 +423,9 @@ sub compareValues {
   my $v1 = shift;
   my $v2 = shift;
 
-  my $t1 = lc $v1->[1]; $t1 = "" unless $t1;
+  my $t1 = defined($v1->[1]) ? lc $v1->[1] : "";
      $v1 = lc $v1->[0];
-  my $t2 = lc $v2->[1]; $t2 = "" unless $t2;
+  my $t2 = defined($v2->[1]) ? lc $v2->[1] : "";
      $v2 = lc $v2->[0];
 
   if (($v1 eq $v2) and ($t1 eq $t2)) {
