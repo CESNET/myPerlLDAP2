@@ -26,6 +26,7 @@ $SOK = 1;
 $entry->addValues('objectClass', ['top', 'person', 'inetOrgPerson', 'posixAccount']) or $SOK=0;
 $entry->addValues('UID', 'test') or $SOK=0;
 $entry->addValues('sn', 'Testovic') or $SOK=0;
+$entry->addValues('sn', 'Examplic', 'lang-en') or $SOK=0;
 $entry->addValues('cn', 'Test Testovic') or $SOK=0;
 $entry->addValues('givenName', 'Test') or $SOK=0;
 $entry->addValues('mail', 'test1@testing.universe') or $SOK=0;
