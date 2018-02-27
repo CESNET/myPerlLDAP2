@@ -29,9 +29,7 @@ use vars qw($SOK);
 use myPerlLDAP::abstract;
 use myPerlLDAP::attribute;
 use myPerlLDAP::entry;
-use myPerlLDAP::searchResult;
 use myPerlLDAP::utils;
-use myPerlLDAP::conn;
 use t::C;
 
 $myPerlLDAP::attribute::fields{debug}=0;
