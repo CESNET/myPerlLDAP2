@@ -1,45 +1,16 @@
 #!/usr/bin/perl -w
 #$Id$
 
-# #############################################################################
-# myPerlLDAP - object oriented interface for work with LDAP
-# Copyright (C) 2001,02 by Jan Tomasek
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public
-# License as published by the Free Software Foundation; either
-# version 2 of the License, or (at your option) any later version.
-#
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Library General Public License for more details.
-#
-# You should have received a copy of the GNU Library General Public
-# License along with this library; if not, write to the Free
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-# #############################################################################
-
-# #############################################################################
-# This module contains some code pieces from Mozilla::OpenLDAP::Conn
-# (extracted from Mozilla-OpenLDAP-API-1.4), please look at coments before
-# definition of each function for info about it's origin. The original code
-# was introduced by this:
-#    The Original Code is PerLDAP. The Initial Developer of the Original
-#    Code is Netscape Communications Corp. and Clayton Donley. Portions
-#    created by Netscape are Copyright (C) Netscape Communications Corp.,
-#    portions created by Clayton Donley are Copyright (C) Clayton Donley.
-#    All Rights Reserved.
-# #############################################################################
-
 package myPerlLDAP::conn;
 
 use strict;
 
 # TODO: Dont' import all ... mod_perl eff :(
-use perlOpenLDAP::API 1.5 qw(/.+/);
+use Net::LDAPS;
+use Net::LDAP;
+use Net::LDAP::Constant qw(LDAP_SUCCESS);
 use myPerlLDAP::abstract;
-use myPerlLDAP::utils qw(str2Scope normalizeDN);
+use myPerlLDAP::utils qw /:all/;
 use myPerlLDAP::entry;
 use myPerlLDAP::searchResult;
 use myPerlLDAP::aci;
@@ -61,13 +32,16 @@ $SYSLOG = 0;
 	   bindDN => undef,
 	   bindPasswd => undef,
 	   certDB => undef,
-	   ld => undef,
+	   ld => undef, #TODO SEMIK zlikvidovat
 	   ldRes => undef,
 	   dn => undef,
 	   aciCTRLSuported => undef,
 	   aciCTRL => undef,
-	   retry => 0,
-	   delay => 1,
+ 	   retry => 0,
+           delay => 1,
+           ldap => undef,
+           ldap_last => undef,
+    
 	  );
 
 #############################################################################
@@ -157,6 +131,20 @@ sub DESTROY {
 }; # DESTROY ----------------------------------------------------------------
 
 #############################################################################
+# New method taken from Net::LDAP - it releases internal structures of
+# last request
+# 
+sub abandon {
+  my ($self) = shift;
+
+  if (defined($self->ldap_last)) {
+      $self->ldap_last->abandon;
+      $self->ldap_last(undef);
+  };
+  return 1;
+}; 
+
+#############################################################################
 # Initialize a normal connection. This seems silly, why not just merge
 # this back into the creator method (new)...
 #
@@ -165,48 +153,43 @@ sub DESTROY {
 # not be merged back to constructor I like this way ;-)
 sub init {
   my ($self) = shift;
-  my ($ret, $ld);
+  my ($ret, $ldap);
 
+  
   if (defined($self->certDB) && ($self->certDB ne "")) {
-    # function ldapssl_client_init is here only for compatibility with
-    # programs written for perlLDAP
-    #$ret = ldapssl_client_init($self->certDB, 0);
-    #return if ($ret < 0);
-
-    # this way was working for OpenLDAP 2.0.6 or 2.0.7, it's not working
-    # any more
-    $ld = ldapssl_init($self->host, $self->port, 1);
-
-    #$ret = perlOpenLDAP::API::ldap_initialize($ld, 'ldaps://'.$self->host.':'.$self->port.'/');
+      $ldap = Net::LDAPS->new($self->host, port => $self->port);
   } else {
-    $ld = ldap_init($self->host, $self->port);
+      $ldap = Net::LDAP->new($self->host, port => $self->port);
   };
-  return unless $ld;
+  return unless $ldap;
 
-  $ret = ldap_set_option($ld, LDAP_OPT_PROTOCOL_VERSION, LDAP_VERSION3);
-  return unless ($ret == LDAP_SUCCESS);
-
-  $self->ld($ld);
+  $self->abandon;
+  $self->ldap($ldap);
   my $count = 0;
   do {
     sleep($self->delay) if ($count++ > 0);
 
-    $ret = ldap_simple_bind_s($ld, $self->bindDN, $self->bindPasswd);
-  } while (($ret != LDAP_SUCCESS) and ($count < $self->retry));
+    if (($self->bindDN) and ($self->bindPasswd)) {
+	$ret = $ldap->bind($self->bindDN,
+			   password => $self->bindPasswd);
+    } else {
+	$ret = $ldap->bind;
+    };
+  } while (($ret->code != LDAP_SUCCESS) and ($count < $self->retry));
+  $self->ldap_last($ret);
 
   $self->{aciCTRLSuported} = undef;
-  if (($ret == LDAP_SUCCESS) and ($self->{bindPasswd})) {
-    return $self->initACI;
-  } else {
-    return (($ret == LDAP_SUCCESS) ? 1 : undef);
-  };
+  #TODO SEMIK - tohle potrebujem
+  #if (($ret->code == LDAP_SUCCESS) and ($self->{bindPasswd})) {
+  #  return $self->initACI;
+  #};
 
-  die "myPerlLDAP::conn: We can't reach this point";
-  return (($ret == LDAP_SUCCESS) ? 1 : undef);
+  return (($ret->code == LDAP_SUCCESS) ? 1 : undef);
 } # init --------------------------------------------------------------------
 
 sub initACI {
-  my $self = shift;
+    my $self = shift;
+    return undef;
   # Why isn't posible this?? Server returns error code
   # 53 = LDAP_UNWILLING_TO_PERFORM
   # warn ldap_compare_s($ld, "", "supportedControl", "1.3.6.1.4.1.42.2.27.9.5.2");
@@ -216,7 +199,8 @@ sub initACI {
   my @attrs = ("supportedControl");
   my ($resv);
   my ($res) = \$resv;
-  if (! ldap_search_s($self->ld, "", LDAP_SCOPE_BASE, "(objectClass=*)",
+  #if (! ldap_search_s($self->ld, "", TODO SEMIK!! LDAP_SCOPE_BASE, "(objectClass=*)",
+  if (! ldap_search_s($self->ld, "", 'base', "(objectClass=*)",
 		      defined(\@attrs) ? \@attrs : 0,
 		      0,
 		      defined($res) ? $res : 0)) {
@@ -314,53 +298,43 @@ sub printErrorMessage {
 } # printError --------------------------------------------------------------
 
 #############################################################################
-# Normal LDAP search. Note that this will actually perform LDAP URL searches
-# if the filter string looks like a proper URL.
-#
-# Based on code from perLDAP-1.4 (they don't have any SerachResults class)
+# Normal LDAP search. 
 #
 sub search {
   my ($self, $basedn, $scope, $filter, $attrsonly, @attrs) = @_;
   my ($resv);
   my ($res) = \$resv;
 
-  $scope = str2Scope($scope);
+  $self->abandon;
   $filter = "(objectclass=*)" if ($filter =~ /^ALL$/i);
 
-  if (defined($self->ldRes)) {
-    ldap_msgfree($self->ldRes);
-    $self->ldRes(undef);
-    # undef $self->{"ldres"};
-  };
-
-  if (ldap_is_ldap_url($filter)) {
+#  if (ldap_is_ldap_url($filter)) {
 #    if (! ldap_url_search_s($self->ld, $filter, $attrsonly, $res)) {
 #      my $sRes = new myPerlLDAP::searchResults($self->ld, $res);
 #      return $sRes;
 #    };
-    return undef;
-  } else {
-    push @attrs, 'aclRights' if (defined($self->aciCTRL));
+#      return undef;
+#  } else {
+  push @attrs, 'aclRights' if (defined($self->aciCTRL));
 
-    if (! ldap_search_ext_s($self->ld,
-			    $basedn, $scope, $filter,
-			    defined(\@attrs) ? \@attrs : 0,
-			    defined($attrsonly) ? $attrsonly : 0,
-			    defined($self->aciCTRL) ? [$self->aciCTRL] : undef,
-			    undef,
-			    undef, 0,
-			    defined($res) ? $res : 0)) {
-      my $sRes = new myPerlLDAP::searchResult($self->ld, $res, $self);
+  my %search_params = ( base => $basedn,
+			scope => $scope,
+			filter => $filter);
+  $search_params{attrs} = \@attrs if (@attrs);
+
+  my $mesg = $self->ldap->search(%search_params);
+  if ($mesg->code == LDAP_SUCCESS) {
+      my $sRes = new myPerlLDAP::searchResult($mesg, $self);
       $sRes->owner($self);
       return $sRes;
-    } else {
-      # Error code "is" in $self->ld
-      return ;
-    };
   };
 
-  # Nejak spatne zavolana funkce $sefl->error vrati ???
-  return ;
+  # Semik: Nevim jestli bych nemel zaregistrovat vysledek hledani i
+  # kdyz vse dopadne dobre. Obavam se ale ze mivam paralelne
+  # rozzpracovanych nekolik hledani. Takze o likvidaci se bude muset
+  # postarat objekt searchResult.
+  $self->ldap_last($mesg);
+  return
 } # search ------------------------------------------------------------------
 
 #############################################################################
@@ -369,23 +343,40 @@ sub search {
 #
 sub read {
   my ($self, $dn, @attrs) = @_;
-  my $resv;
-  my $res = \$resv;
 
   if (@attrs and (scalar(@attrs)==1)) {
-    @attrs = @{$attrs[0]} if (ref($attrs[0]) eq 'ARRAY');
+      @attrs = @{$attrs[0]} if (ref($attrs[0]) eq 'ARRAY');
   };
 
-  if (!ldap_search_s($self->ld, $dn, LDAP_SCOPE_BASE, '(objectclass=*)',
-		     defined(\@attrs) ? \@attrs : 0,
-		     0,
-		     defined($res) ? $res : 0)) {
-    my $sRes = new myPerlLDAP::searchResult($self->ld, $res, $self);
-    if ($sRes) {
-      my $entry = $sRes->nextEntry;
+  my %search_params = ( base => $dn,
+			scope => LDAP_SCOPE_BASE,
+			filter => '(objectclass=*)');
+  $search_params{attrs} = \@attrs if (@attrs);
+
+  my $mesg = $self->ldap->search(%search_params);
+  $self->ldap_last($mesg);
+  if ($mesg->code == LDAP_SUCCESS) {
+      my $nentry = $mesg->entry(0);
+
+      my $entry = new myPerlLDAP::entry;
+      $entry->initFromNetLDAP($nentry);
+      $entry->owner($self);
+
       return $entry;
-    };
   };
+
+  return;
+  
+  # if (!ldap_search_s($self->ld, $dn, LDAP_SCOPE_BASE, '(objectclass=*)',
+  # 		     defined(\@attrs) ? \@attrs : 0,
+  # 		     0,
+  # 		     defined($res) ? $res : 0)) {
+  #   my $sRes = new myPerlLDAP::searchResult($self->ld, $res, $self);
+  #   if ($sRes) {
+  #     my $entry = $sRes->nextEntry;
+  #     return $entry;
+  #   };
+  # };
 
   return undef;
 }; # read -------------------------------------------------------------------
@@ -426,8 +417,12 @@ sub read {
 sub browse {
   my ($self, $basedn, @attrs) = @_;
 
-  return  $self->search($basedn, LDAP_SCOPE_BASE, "(objectclass=*)",
-			0, @attrs);
+  return undef;
+
+  #TODO SEMIK
+  
+#  return  $self->search($basedn, LDAP_SCOPE_BASE, "(objectclass=*)",
+#			0, @attrs);
 }; # browse -----------------------------------------------------------------
 
 #############################################################################
@@ -437,10 +432,13 @@ sub browse {
 # Without any change copied from perLDAP-1.4
 #
 sub compare {
-  my ($self, $dn, $attr, $value) = @_;
+    my ($self, $dn, $attr, $value) = @_;
+    return undef;
 
-  return ldap_compare_s($self->ld, $dn, $attr, $value) ==
-    LDAP_COMPARE_TRUE;
+    #TODO SEMIK
+
+#  return ldap_compare_s($self->ld, $dn, $attr, $value) ==
+#    LDAP_COMPARE_TRUE;
 }; # compare ----------------------------------------------------------------
 
 #############################################################################
@@ -453,14 +451,15 @@ sub close {
   my $ret = LDAP_SUCCESS; # Originaly was here that assignment $ret = 1 ...
                           # it never can't work; Actualy this is useles ...
 
-  ldap_unbind_s($self->ld) if defined($self->ld);
-  if (defined($self->ldRes)) {
-    ldap_msgfree($self->ldRes);
-    $self->ldres(undef);
+  if (defined($self->ldap)) {
+      my $mesg = $self->ldap->unbind;
+      $self->ldap_last($mesg);
+      return (($mesg->code == LDAP_SUCCESS) ? 1 : undef);
   };
-  $self->ld(undef);
+  $self->ldap_last(undef);
+  $self->ldap(undef);
 
-  return (($ret == LDAP_SUCCESS) ? 1 : undef);
+  return
 }; # close ------------------------------------------------------------------
 
 #############################################################################
@@ -614,57 +613,59 @@ sub update {
   };
 }; # update -----------------------------------------------------------------
 
-#############################################################################
-# Set the rebind procedure. We also provide a neat default rebind procedure,
-# which takes three arguments (DN, password, and the auth method). This is an
-# extension to the LDAP SDK, which I think should be there. It was also
-# needed to get this to work on Win/NT...
-#
-# Without any change copied from perLDAP-1.4 ... I've no idea what is this
-#
-sub setRebindProc {
-  my ($self, $proc) = @_;
+# SEMIK REMOVE: Nemyslim ze to nekde pouzivam
+# #############################################################################
+# # Set the rebind procedure. We also provide a neat default rebind procedure,
+# # which takes three arguments (DN, password, and the auth method). This is an
+# # extension to the LDAP SDK, which I think should be there. It was also
+# # needed to get this to work on Win/NT...
+# #
+# # Without any change copied from perLDAP-1.4 ... I've no idea what is this
+# #
+# sub setRebindProc {
+#   my ($self, $proc) = @_;
 
-  # Should we try to reinitialize the connection?
-  die "No LDAP connection" unless defined($self->ld);
+#   # Should we try to reinitialize the connection?
+#   die "No LDAP connection" unless defined($self->ld);
 
-  ldap_set_rebind_proc($self->ld, $proc);
-}; # setRebindProc ----------------------------------------------------------
+#   ldap_set_rebind_proc($self->ld, $proc);
+# }; # setRebindProc ----------------------------------------------------------
 
-sub setDefaultRebindProc {
-  my ($self, $dn, $pswd, $auth) = @_;
+# sub setDefaultRebindProc {
+#   my ($self, $dn, $pswd, $auth) = @_;
 
-  $auth = LDAP_AUTH_SIMPLE unless defined($auth);
-  die "No LDAP connection"
-    unless defined($self->ld);
+#   $auth = LDAP_AUTH_SIMPLE unless defined($auth);
+#   die "No LDAP connection"
+#     unless defined($self->ld);
 
-  ldap_set_default_rebind_proc($self->ld, $dn, $pswd, $auth);
-} # setDefaultRebindProc ----------------------------------------------------
+#   ldap_set_default_rebind_proc($self->ld, $dn, $pswd, $auth);
+# } # setDefaultRebindProc ----------------------------------------------------
 
-#############################################################################
-# Do a simple authentication, so that we can rebind as another user.
-#
-# Without any change copied from perLDAP-1.4
-#
-sub simpleAuth {
-  my ($self, $dn, $pswd) = @_;
-  my ($ret);
+# SEMIK REMOVE: Nemyslim ze to nekde pouzivam
+# #############################################################################
+# # Do a simple authentication, so that we can rebind as another user.
+# #
+# # Without any change copied from perLDAP-1.4
+# #
+# sub simpleAuth {
+#   my ($self, $dn, $pswd) = @_;
+#   my ($ret);
 
-  $ret = ldap_simple_bind_s($self->ld, $dn, $pswd);
+#   $ret = ldap_simple_bind_s($self->ld, $dn, $pswd);
 
-  $self->bindDN($dn);
-  $self->bindPasswd($pswd);
+#   $self->bindDN($dn);
+#   $self->bindPasswd($pswd);
 
-  $self->{aciCTRLSuported} = undef;
-  if (($ret == LDAP_SUCCESS) and (defined($pswd))) {
-    return $self->initACI;
-  } else {
-    return (($ret == LDAP_SUCCESS) ? 1 : undef);
-  };
+#   $self->{aciCTRLSuported} = undef;
+#   if (($ret == LDAP_SUCCESS) and (defined($pswd))) {
+#     return $self->initACI;
+#   } else {
+#     return (($ret == LDAP_SUCCESS) ? 1 : undef);
+#   };
 
-  die "myPerlLDAP::conn: We can't reach this point";
-  return (($ret == LDAP_SUCCESS) ? 1 : 0);
-}; # simpleAuth -------------------------------------------------------------
+#   die "myPerlLDAP::conn: We can't reach this point";
+#   return (($ret == LDAP_SUCCESS) ? 1 : 0);
+# }; # simpleAuth -------------------------------------------------------------
 
 
 #############################################################################
@@ -675,53 +676,56 @@ sub readACI {
   my $dn = shift;
   my @attrs = @_;
 
-  if ($self->aciCTRLSuported) {
-    my $ctrl;
-    my $ret = ldap_create_rights_control($self->ld,
-					 # puvodni kod pro SunONE
-					 # pouzival jen "" jako
-					 # identifikaci aktualne
-					 # prihlaseneho uzivatele
-					 "dn:".$self->bindDN, #as actualy loged user
-					 \@attrs,#list of attrs we are interested in
-					 1,#critical? YES!
-					 $ctrl);
-    # error code is accesible via $self->ld
-    return undef unless ($ret==LDAP_SUCCESS);
+  return undef;
 
-    my $res;
-    #push @attrs, 'aclRights';
-    $ret = ldap_search_ext_s($self->ld,
-			     $dn, LDAP_SCOPE_BASE, '(objectClass=*)',
-			     # puvodni kod vystacil s pozadavkem na
-			     # aclRights, 389 to dela dost jinak, je
-			     # potreba mu pridat seznam atribitutu
-			     # ktery chceme zkoumat
-			     [@attrs,'aclRights'],0,
-			     [$ctrl],
-			     undef,
-			     undef,0,
-			     $res);
-    return undef unless ($ret==LDAP_SUCCESS);
+  # SEMIK TODO
+#   if ($self->aciCTRLSuported) {
+#     my $ctrl;
+#     my $ret = ldap_create_rights_control($self->ld,
+# 					 # puvodni kod pro SunONE
+# 					 # pouzival jen "" jako
+# 					 # identifikaci aktualne
+# 					 # prihlaseneho uzivatele
+# 					 "dn:".$self->bindDN, #as actualy loged user
+# 					 \@attrs,#list of attrs we are interested in
+# 					 1,#critical? YES!
+# 					 $ctrl);
+#     # error code is accesible via $self->ld
+#     return undef unless ($ret==LDAP_SUCCESS);
 
-    ldap_control_free($ctrl); $ctrl = undef;
+#     my $res;
+#     #push @attrs, 'aclRights';
+#     $ret = ldap_search_ext_s($self->ld,
+# 			     $dn, LDAP_SCOPE_BASE, '(objectClass=*)',
+# 			     # puvodni kod vystacil s pozadavkem na
+# 			     # aclRights, 389 to dela dost jinak, je
+# 			     # potreba mu pridat seznam atribitutu
+# 			     # ktery chceme zkoumat
+# 			     [@attrs,'aclRights'],0,
+# 			     [$ctrl],
+# 			     undef,
+# 			     undef,0,
+# 			     $res);
+#     return undef unless ($ret==LDAP_SUCCESS);
 
-    my $aci = new myPerlLDAP::aci($self->ld, $res);
-    $aci->owner($self);
-    return $aci;
-  } else {
-    my %hash;
-    $hash{'aclrights;entrylevel'} = ['add:0,delete:0,read:1,write:0,proxy:0'];
-    foreach my $attr (@attrs) {
-      $hash{"aclrights;attributelevel;$attr"} = ['search:1,read:1,compare:1,write:0,selfwrite_add:0,selfwrite_delete:0,proxy:0'];
-    };
+#     ldap_control_free($ctrl); $ctrl = undef;
 
-    my $aci = new myPerlLDAP::aci;
-    $aci->initFromHash(\%hash);
+#     my $aci = new myPerlLDAP::aci($self->ld, $res);
+#     $aci->owner($self);
+#     return $aci;
+#   } else {
+#     my %hash;
+#     $hash{'aclrights;entrylevel'} = ['add:0,delete:0,read:1,write:0,proxy:0'];
+#     foreach my $attr (@attrs) {
+#       $hash{"aclrights;attributelevel;$attr"} = ['search:1,read:1,compare:1,write:0,selfwrite_add:0,selfwrite_delete:0,proxy:0'];
+#     };
 
-    return $aci
-#    die "myPerlLDAP::readACI: XXXXXXXXXXXXXXXXXXX";
-  };
+#     my $aci = new myPerlLDAP::aci;
+#     $aci->initFromHash(\%hash);
+
+#     return $aci
+# #    die "myPerlLDAP::readACI: XXXXXXXXXXXXXXXXXXX";
+#   };
 };
 
 sub initACICTRL {

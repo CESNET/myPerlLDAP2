@@ -28,8 +28,9 @@ package myPerlLDAP::abstract;
 use strict;
 use Carp;
 use vars qw($_D $AUTOLOAD %fields);
-use perlOpenLDAP::API 1.4 qw(ldap_err2string
-			     LDAP_SUCCESS);
+use Net::LDAP::Constant qw(LDAP_SUCCESS);
+#use perlOpenLDAP::API 1.4 qw(ldap_err2string
+#			     LDAP_SUCCESS);
 
 $_D = 1;
 
@@ -55,7 +56,8 @@ sub new {
 sub errorMessage {
   my $self = shift;
 
-  return ldap_err2string($self->error);
+  die "TODO";
+#  return ldap_err2string($self->error);
 };
 
 sub AUTOLOAD {

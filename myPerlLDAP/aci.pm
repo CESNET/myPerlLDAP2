@@ -25,7 +25,7 @@ package myPerlLDAP::aci;
 use strict;
 use Carp;
 use Data::Dumper;
-use perlOpenLDAP::API 1.5 qw(/.+/);
+#use perlOpenLDAP::API 1.5 qw(/.+/);
 use myPerlLDAP::abstract;
 use myPerlLDAP::attribute;
 use myPerlLDAP::utils qw(quote4XML quote4HTTP);

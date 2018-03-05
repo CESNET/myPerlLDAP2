@@ -38,7 +38,7 @@ use strict;
 use Data::Dumper;
 use vars qw(@ISA %EXPORT_TAGS);
 
-use perlOpenLDAP::API qw(LDAP_SCOPE_SUBTREE LDAP_SCOPE_BASE LDAP_SCOPE_ONELEVEL ldap_explode_dn);
+#use perlOpenLDAP::API qw(LDAP_SCOPE_SUBTREE LDAP_SCOPE_BASE LDAP_SCOPE_ONELEVEL ldap_explode_dn);
 
 @ISA = qw(Exporter);
 %EXPORT_TAGS = (
@@ -47,31 +47,43 @@ use perlOpenLDAP::API qw(LDAP_SCOPE_SUBTREE LDAP_SCOPE_BASE LDAP_SCOPE_ONELEVEL 
 			   quote4XML
 			   quote4HTTP
 			   isBinary
+
+                           LDAPS_PORT
+                           LDAP_PORT
+                           LDAP_SCOPE_SUBTREE
+                           LDAP_SCOPE_BASE
 			   )]
 		);
 # Add Everything in %EXPORT_TAGS to @EXPORT_OK
 Exporter::export_ok_tags('all');
+
+use constant LDAPS_PORT => 636;
+use constant LDAP_PORT  => 389;
+use constant LDAP_SCOPE_SUBTREE => 'sub';
+use constant LDAP_SCOPE_BASE => 'base';
 
 #############################################################################
 # Convert a "human" readable string to an LDAP scope value
 #
 # Without any change copied from Mozilla::perLDAP::Utils
 #
+# TODO: SEMIK Net::LDAP pouziva rovnou stringy
 sub str2Scope {
-  my ($str) = $_[0];
+    my ($str) = $_[0];
+    return $str;
 
-  return $str if ($str =~ /^[0-9]+$/);
+  # return $str if ($str =~ /^[0-9]+$/);
 
-  if ($str =~ /^sub/i) {
-    return LDAP_SCOPE_SUBTREE;
-  } elsif ($str =~ /^base/i) {
-    return LDAP_SCOPE_BASE;
-  } elsif ($str =~ /^one/i) {
-    return LDAP_SCOPE_ONELEVEL;
-  };
+  # if ($str =~ /^sub/i) {
+  #   return LDAP_SCOPE_SUBTREE;
+  # } elsif ($str =~ /^base/i) {
+  #   return LDAP_SCOPE_BASE;
+  # } elsif ($str =~ /^one/i) {
+  #   return LDAP_SCOPE_ONELEVEL;
+  # };
 
-  # Default...
-  return LDAP_SCOPE_SUBTREE;
+  # # Default...
+  # return LDAP_SCOPE_SUBTREE;
 };
 
 #############################################################################
@@ -86,7 +98,7 @@ sub normalizeDN {
   my (@vals);
 
   return "" unless (defined($dn) && ($dn ne ""));
-
+#TODO
   @vals = ldap_explode_dn(lc $dn, 0);
 
   return join(",", @vals);

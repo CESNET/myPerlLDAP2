@@ -25,8 +25,11 @@ package myPerlLDAP::entry;
 use strict;
 use Carp;
 use Data::Dumper;
-use perlOpenLDAP::API qw(LDAP_SUCCESS LDAP_NO_SUCH_ATTRIBUTE
-			 LDAP_ALREADY_EXISTS);
+use Net::LDAP::Constant qw(LDAP_SUCCESS LDAP_NO_SUCH_ATTRIBUTE
+			   LDAP_ALREADY_EXISTS);
+
+#use perlOpenLDAP::API qw(LDAP_SUCCESS LDAP_NO_SUCH_ATTRIBUTE
+#			 LDAP_ALREADY_EXISTS);
 use myPerlLDAP::abstract;
 use myPerlLDAP::attribute;
 use myPerlLDAP::utils qw(quote4XML quote4HTTP);
@@ -84,6 +87,31 @@ sub new {
     };
   };
   $self->init(@_);
+
+  return $self;
+};
+
+# create myPerlLDAP::Entry from Net::LDAP::Entry
+#
+sub initFromNetLDAP {
+  my $self = shift;
+  my $nentry = shift;
+
+  $self->dn($nentry->dn);
+
+  foreach my $attr ($nentry->attributes(nooptions => 1)) {
+      my $values = $nentry->get_value($attr, alloptions => 1);
+      foreach my $subtype (keys %{$values}) {
+	  if ($subtype eq '') {
+	      $self->addValues(lc $attr, $values->{$subtype});
+	  } else {
+	      my $_subtype = $subtype; $_subtype =~ s/^;//;
+	      
+	      $self->addValues(lc $attr, $values->{$subtype}, lc($_subtype));
+	  };
+      };
+  };
+  $self->clearModifiedFlags;
 
   return $self;
 };

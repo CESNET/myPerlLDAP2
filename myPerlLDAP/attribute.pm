@@ -25,9 +25,8 @@ package myPerlLDAP::attribute;
 use strict;
 
 use Carp;
-use perlOpenLDAP::API qw(LDAP_SUCCESS LDAP_CONSTRAINT_VIOLATION
-			 LDAP_TYPE_OR_VALUE_EXISTS LDAP_NO_SUCH_OBJECT);
-use myPerlLDAP::attribute;
+use Net::LDAP::Constant qw(LDAP_SUCCESS LDAP_CONSTRAINT_VIOLATION
+  			   LDAP_TYPE_OR_VALUE_EXISTS LDAP_NO_SUCH_OBJECT);
 use MIME::Base64;
 use myPerlLDAP::utils qw(quote4XML quote4HTTP isBinary);
 use Storable qw(dclone);

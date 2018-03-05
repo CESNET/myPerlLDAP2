@@ -1,31 +1,11 @@
 #!/usr/bin/perl -w
-#$Id$
-
-# #############################################################################
-# myPerlLDAP - object oriented interface for work with LDAP
-# Copyright (C) 2001,02 by Jan Tomasek
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public
-# License as published by the Free Software Foundation; either
-# version 2 of the License, or (at your option) any later version.
-#
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Library General Public License for more details.
-#
-# You should have received a copy of the GNU Library General Public
-# License along with this library; if not, write to the Free
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-# #############################################################################
 
 package myPerlLDAP::searchResult;
 
-use perlOpenLDAP::API 1.4 qw(ldap_first_entry ldap_next_entry ldap_msgfree
-			     ldap_get_dn ldap_first_attribute
-			     ldap_next_attribute ldap_get_values_len
-			     ldap_ber_free ldap_count_entries);
+#use perlOpenLDAP::API 1.4 qw(ldap_first_entry ldap_next_entry ldap_msgfree
+#			     ldap_get_dn ldap_first_attribute
+#			     ldap_next_attribute ldap_get_values_len
+#			     ldap_ber_free ldap_count_entries);
 use myPerlLDAP::attribute;
 use myPerlLDAP::aci;
 use strict;
@@ -60,22 +40,21 @@ sub new {
 };
 
 sub init {
-  my $self = shift;
-  my $ld = shift;
-  my $res = shift;
-  my $conn = shift;
-
-  if (defined($ld) and defined($res)) {
-    $self->{ldres}=$res;
-    $self->{ld}=$ld;
-    $self->owner($conn);
-    $self->{ldfe}=1;
-
-    return $self;
-  } else {
-    carp("$self->init requires ld and res args");
-    return undef;
-  };
+    my $self = shift;
+    my $res = shift;
+    my $conn = shift;
+    
+    if (defined($res)) {
+	$self->{ldres}=$res;
+	$self->owner($conn);
+	$self->{ldfe}=1;
+	$self->{sEntrI} = 0;
+	
+	return $self;
+    } else {
+	carp("$self->init requires res arg");
+	return undef;
+    };
 };
 
 #############################################################################
@@ -112,84 +91,107 @@ sub addValues2Entry {
 # so I created this class and moved some code here.
 #
 sub nextEntry {
-  my $self = shift;
+    my $self = shift;
 
-  if (defined($self->sEntr)) {
-    my $entry = $self->sEntr->{$self->{sEntrI}++};
-    return $entry;
-  } else {
-    my (%entry, @vals);
-    my ($attr, $lcattr, $ldentry, $berv, $dn, $count);
-    my ($ber) = \$berv;
+    if (defined($self->sEntr) and defined($self->sEntr->{$self->sEntrI+1})) {
+	# entry uz jsme jednou prevzali od podrazeneho objektu, takze
+	# vracime nasi hodnotu z kese
+	my $entry = $self->sEntr->{$self->{sEntrI}++};
+	return $entry;
+    } elsif ($self->sEntrI < $self->{ldres}->count) {
+	my $nentry = $self->{ldres}->entry($self->sEntrI);
 
-    my $entry = new myPerlLDAP::entry();
-    $entry->owner($self->owner);
+	my $entry = new myPerlLDAP::entry;
+	$entry->initFromNetLDAP($nentry);
+	$entry->owner($self->owner);
 
-    if ($self->{"ldfe"} == 1) {
-      return unless defined($self->{"ldres"});
+	$self->{sEntr}->{$self->sEntrI} = $entry;
+	$self->{sEntrI}++;
 
-      $self->{"ldfe"} = 0;
-      $ldentry = ldap_first_entry($self->{"ld"}, $self->{"ldres"});
-      $self->{"ldentry"} = $ldentry;
+	# SEMIK TODO: ACI!!!
+
+	return $entry;
     } else {
-      return unless defined($self->{"ldentry"});
-
-      $ldentry = ldap_next_entry($self->{"ld"}, $self->{"ldentry"});
-      $self->{"ldentry"} = $ldentry;
+	return
     };
+   
 
-    if (! $ldentry) {
-      #if (defined($self->{"ldres"})) {
-      #  ldap_msgfree($self->{"ldres"});
-      #  undef $self->{"ldres"};
-      #}
-      return undef;
-    };
+  # if (defined($self->sEntr)) {
+  #   my $entry = $self->sEntr->{$self->{sEntrI}++};
+  #   return $entry;
+  # } else {
+  #   my (%entry, @vals);
+  #   my ($attr, $lcattr, $ldentry, $berv, $dn, $count);
+  #   my ($ber) = \$berv;
 
-    $dn = ldap_get_dn($self->{"ld"}, $self->{"ldentry"});
-    $entry->dn($dn);
+  #   my $entry = new myPerlLDAP::entry();
+  #   $entry->owner($self->owner);
 
-    $attr = ldap_first_attribute($self->{"ld"}, $self->{"ldentry"}, $ber);
-    $entry->clearModifiedFlags;
-    return $entry unless $attr;
+  #   if ($self->{"ldfe"} == 1) {
+  #     return unless defined($self->{"ldres"});
 
-    my %aclRights;
-    $count = 1;
-    while ($attr) {
-      $lcattr = lc $attr;
-      my @vals = ldap_get_values_len($self->{"ld"}, $self->{"ldentry"}, $attr);
-      if ($lcattr =~ /^aclrights/) {
-	$aclRights{$lcattr} = \@vals;
-      } else {
-	$self->addValues2Entry($entry, $lcattr, \@vals);
-      };
+  #     $self->{"ldfe"} = 0;
+  #     $ldentry = ldap_first_entry($self->{"ld"}, $self->{"ldres"});
+  #     $self->{"ldentry"} = $ldentry;
+  #   } else {
+  #     return unless defined($self->{"ldentry"});
 
-      $attr = ldap_next_attribute($self->{"ld"},
-				  $self->{"ldentry"}, $ber);
-      $count++;
-    };
-    ldap_ber_free($ber, 0) if $ber;
+  #     $ldentry = ldap_next_entry($self->{"ld"}, $self->{"ldentry"});
+  #     $self->{"ldentry"} = $ldentry;
+  #   };
 
-    if (%aclRights) {
-      my $aci = new myPerlLDAP::aci;
-      $aci->initFromHash(\%aclRights);
-      $entry->aci($aci);
-    } else {
-      # Ten samy kod co je u myPerlLDAP::conn chtelo by to udelat nejak lip.
-      my %hash;
-      $hash{'aclrights;entrylevel'} = ['add:0,delete:0,read:1,write:0,proxy:0'];
-      foreach my $attr (@{$entry->attrList}) {
-	$hash{"aclrights;attributelevel;$attr"} = ['search:1,read:1,compare:1,write:0,selfwrite_add:0,selfwrite_delete:0,proxy:0'];
-      };
+  #   if (! $ldentry) {
+  #     #if (defined($self->{"ldres"})) {
+  #     #  ldap_msgfree($self->{"ldres"});
+  #     #  undef $self->{"ldres"};
+  #     #}
+  #     return undef;
+  #   };
 
-      my $aci = new myPerlLDAP::aci;
-      $aci->initFromHash(\%hash);
-      $entry->aci($aci);
-    };
+  #   $dn = ldap_get_dn($self->{"ld"}, $self->{"ldentry"});
+  #   $entry->dn($dn);
 
-    $entry->clearModifiedFlags;
-    return $entry;
-  };
+  #   $attr = ldap_first_attribute($self->{"ld"}, $self->{"ldentry"}, $ber);
+  #   $entry->clearModifiedFlags;
+  #   return $entry unless $attr;
+
+  #   my %aclRights;
+  #   $count = 1;
+  #   while ($attr) {
+  #     $lcattr = lc $attr;
+  #     my @vals = ldap_get_values_len($self->{"ld"}, $self->{"ldentry"}, $attr);
+  #     if ($lcattr =~ /^aclrights/) {
+  # 	$aclRights{$lcattr} = \@vals;
+  #     } else {
+  # 	$self->addValues2Entry($entry, $lcattr, \@vals);
+  #     };
+
+  #     $attr = ldap_next_attribute($self->{"ld"},
+  # 				  $self->{"ldentry"}, $ber);
+  #     $count++;
+  #   };
+  #   ldap_ber_free($ber, 0) if $ber;
+
+  #   if (%aclRights) {
+  #     my $aci = new myPerlLDAP::aci;
+  #     $aci->initFromHash(\%aclRights);
+  #     $entry->aci($aci);
+  #   } else {
+  #     # Ten samy kod co je u myPerlLDAP::conn chtelo by to udelat nejak lip.
+  #     my %hash;
+  #     $hash{'aclrights;entrylevel'} = ['add:0,delete:0,read:1,write:0,proxy:0'];
+  #     foreach my $attr (@{$entry->attrList}) {
+  # 	$hash{"aclrights;attributelevel;$attr"} = ['search:1,read:1,compare:1,write:0,selfwrite_add:0,selfwrite_delete:0,proxy:0'];
+  #     };
+
+  #     my $aci = new myPerlLDAP::aci;
+  #     $aci->initFromHash(\%hash);
+  #     $entry->aci($aci);
+  #   };
+
+  #   $entry->clearModifiedFlags;
+  #   return $entry;
+  # };
 };
 
 # Allows using nextEntry from beginning
@@ -205,13 +207,9 @@ sub reset {
 
 # Return count of returned entries
 sub count {
-  my $self = shift;
+    my $self = shift;
 
-  if (defined($self->sEntr)) {
-    my $count = keys %{$self->sEntr};
-    return $count;
-  };
-  return ldap_count_entries($self->{"ld"}, $self->{"ldres"});
+    return $self->{ldres}->count;
 };
 
 sub cmpEntryNode {
