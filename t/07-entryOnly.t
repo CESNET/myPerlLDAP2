@@ -2,7 +2,6 @@
 
 BEGIN { $| = 1; print "1..15\n";}
 
-use lib qw(/home/honza/proj/myPerlLDAP);
 use strict;
 use vars qw($SOK);
 

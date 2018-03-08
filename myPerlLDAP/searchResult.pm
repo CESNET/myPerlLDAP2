@@ -105,6 +105,14 @@ sub nextEntry {
 	$entry->initFromNetLDAP($nentry);
 	$entry->owner($self->owner);
 
+	if ($self->owner->aciCTRL) {
+	    my $aci = new myPerlLDAP::aci($nentry);
+	    if ($aci) {
+		$aci->owner($self);
+		$entry->aci($aci);
+	    };
+	};
+	
 	$self->{sEntr}->{$self->sEntrI} = $entry;
 	$self->{sEntrI}++;
 

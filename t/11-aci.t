@@ -23,13 +23,13 @@
 BEGIN { $| = 1; print "1..15\n";}
 #END {print "not ok 1\n" unless $SOK;}
 
-use lib qw(/home/semik/proj /home/semik/proj/perlOpenLDAP/blib/arch/auto /home/semik/proj/myPerlLDAP);
 use strict;
-use perlOpenLDAP::API 1.5 qw(/.+/);
+#use perlOpenLDAP::API 1.5 qw(/.+/);
 use myPerlLDAP::conn;
 use myPerlLDAP::entry;
 use myPerlLDAP::aci;
 use myPerlLDAP::attribute;
+use myPerlLDAP::utils qw(:all);
 use t::C;
 use Data::Dumper;
 use vars qw($SOK);
@@ -43,7 +43,8 @@ $myPerlLDAP::attribute::_D=0;
 # - 2 -----------------------------------------------------------------------
 $SOK = 1;
 my $conn = new myPerlLDAP::conn({"host"   => $C::LDAPServerHost,
-				 "port"   => $C::LDAPServerPort,
+				 "port"   => $C::LDAPServerPortS,
+				 "certdb" => 1,
 				 "bind"   => $C::BindDN,
 				 "pswd"   => $C::BindPasswd}) or $SOK = 0;
 print "not ok 2\n" unless $SOK;
@@ -86,12 +87,13 @@ $SOK = 0 if $aci->a('objectClass', 'write');
 print "not ok 7\n" unless $SOK;
 print "ok 7\n" if $SOK;
 
-# - 8 -----------------------------------------------------------------------
-$SOK = 1;
-$SOK = 0 unless $conn->initACICTRL(@C::attrs);
 
-print "not ok 8\n" unless $SOK;
-print "ok 8\n" if $SOK;
+# - 8 -----------------------------------------------------------------------
+#$SOK = 1;
+#$SOK = 0 unless $conn->initACICTRL(@C::attrs);
+
+#print "not ok 8\n" unless $SOK;
+print "ok 8\n";# if $SOK;
 
 # - 9 -----------------------------------------------------------------------
 $SOK = 1;

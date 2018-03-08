@@ -5,10 +5,10 @@ package myPerlLDAP::conn;
 
 use strict;
 
-# TODO: Dont' import all ... mod_perl eff :(
 use Net::LDAPS;
 use Net::LDAP;
 use Net::LDAP::Constant qw(LDAP_SUCCESS);
+use Net::LDAP::Control;
 use myPerlLDAP::abstract;
 use myPerlLDAP::utils qw /:all/;
 use myPerlLDAP::entry;
@@ -179,56 +179,24 @@ sub init {
   $self->ldap_last($ret);
 
   $self->{aciCTRLSuported} = undef;
-  #TODO SEMIK - tohle potrebujem
-  #if (($ret->code == LDAP_SUCCESS) and ($self->{bindPasswd})) {
-  #  return $self->initACI;
-  #};
+  if (($ret->code == LDAP_SUCCESS) and ($self->{bindPasswd})) {
+      $self->initACI;
+  };
 
   return (($ret->code == LDAP_SUCCESS) ? 1 : undef);
 } # init --------------------------------------------------------------------
 
 sub initACI {
     my $self = shift;
-    return undef;
-  # Why isn't posible this?? Server returns error code
-  # 53 = LDAP_UNWILLING_TO_PERFORM
-  # warn ldap_compare_s($ld, "", "supportedControl", "1.3.6.1.4.1.42.2.27.9.5.2");
+    # Check if server is supporting ACI control if so, prepare one
+    # for automatic ACI retrieval (nebo jak se to pise)
+    
+    my $rootDSE = $self->read("", 'supportedControl');
+    my $supportedControl = $rootDSE->getValues('supportedControl');
 
-  # Check if server is supporting ACI control if so, prepare one
-  # for automatic ACI retrieval (nebo jak se to pise)
-  my @attrs = ("supportedControl");
-  my ($resv);
-  my ($res) = \$resv;
-  #if (! ldap_search_s($self->ld, "", TODO SEMIK!! LDAP_SCOPE_BASE, "(objectClass=*)",
-  if (! ldap_search_s($self->ld, "", 'base', "(objectClass=*)",
-		      defined(\@attrs) ? \@attrs : 0,
-		      0,
-		      defined($res) ? $res : 0)) {
-    my $aciControl = 0;
+    $self->{aciCTRLSuported} = grep { $_ eq '1.3.6.1.4.1.42.2.27.9.5.2'} @{$supportedControl};
 
-    my $entry = ldap_first_entry($self->ld,$res);
-    my $ber;
-    my $attr = ldap_first_attribute($self->ld,$entry,$ber);
-
-    while (defined($attr)) {
-      if (lc $attr eq 'supportedcontrol') {
-	my @vals = ldap_get_values($self->ld, $entry, $attr);
-	foreach my $oid (@vals) {
-	  $aciControl = 1 if ($oid eq '1.3.6.1.4.1.42.2.27.9.5.2');
-	};
-	undef $attr;
-      } else {
-	$attr = ldap_next_attribute($self->ld, $entry, $ber);
-      }
-    };
-
-    $self->{aciCTRLSuported} = 1 if ($aciControl);
-
-    return 1;
-  } else {
-    die "myPerlLDAP::conn: This should not happen";
-    return undef;
-  };
+    return $self->{aciCTRLSuported};
 };
 
 #############################################################################
@@ -315,12 +283,18 @@ sub search {
 #    };
 #      return undef;
 #  } else {
-  push @attrs, 'aclRights' if (defined($self->aciCTRL));
+
+  my @controls;
+  if (defined($self->aciCTRL)) {
+      push @controls, $self->aciCTRL;
+      push @attrs, 'aclRights'
+  };      
 
   my %search_params = ( base => $basedn,
 			scope => $scope,
 			filter => $filter);
   $search_params{attrs} = \@attrs if (@attrs);
+  $search_params{control} = \@controls if (@controls);
 
   my $mesg = $self->ldap->search(%search_params);
   if ($mesg->code == LDAP_SUCCESS) {
@@ -676,85 +650,68 @@ sub readACI {
   my $dn = shift;
   my @attrs = @_;
 
-  return undef;
+  if ($self->aciCTRLSuported) {
+      my $ctrl = Net::LDAP::Control->new(critical=> 1,
+					 type => '1.3.6.1.4.1.42.2.27.9.5.2',
+					 value => 'dn: '.$self->bindDN,
+	  );
 
-  # SEMIK TODO
+      my $mesg = $self->ldap->search(base => $dn,
+				     scope => 'base',
+				     filter => '(objectClass=*)',
+				     control => [ $ctrl ],
+				     attrs => [ 'aclrights', @attrs ], # entry and attributes
+	  );
+      $self->ldap_last($mesg);
+
+      return undef unless ($mesg->code == LDAP_SUCCESS);
+      $self->aciCTRL($ctrl);
+      
+      my $aci = new myPerlLDAP::aci($mesg->entry(0));
+      $aci->owner($self);
+      return $aci;
+  } else {
+      my %hash;
+      $hash{'aclrights;entrylevel'} = ['add:0,delete:0,read:1,write:0,proxy:0'];
+      foreach my $attr (@attrs) {
+	  $hash{"aclrights;attributelevel;$attr"} = ['search:1,read:1,compare:1,write:0,selfwrite_add:0,selfwrite_delete:0,proxy:0'];
+      };
+
+      my $aci = new myPerlLDAP::aci;
+      $aci->initFromHash(\%hash);
+
+      return $aci
+  };
+};
+
+# SEMIK 8. 3. 2018: nemyslim ze by se to nekde pouzivalo
+# sub initACICTRL {
+#   my $self = shift;
+#   my @attrs = @_;
+
+#   $self->freeACICTRL;
+
 #   if ($self->aciCTRLSuported) {
-#     my $ctrl;
 #     my $ret = ldap_create_rights_control($self->ld,
-# 					 # puvodni kod pro SunONE
-# 					 # pouzival jen "" jako
-# 					 # identifikaci aktualne
-# 					 # prihlaseneho uzivatele
-# 					 "dn:".$self->bindDN, #as actualy loged user
+# 					 "",#as actualy loged user
 # 					 \@attrs,#list of attrs we are interested in
 # 					 1,#critical? YES!
-# 					 $ctrl);
+# 					 $self->{aciCTRL});
 #     # error code is accesible via $self->ld
 #     return undef unless ($ret==LDAP_SUCCESS);
-
-#     my $res;
-#     #push @attrs, 'aclRights';
-#     $ret = ldap_search_ext_s($self->ld,
-# 			     $dn, LDAP_SCOPE_BASE, '(objectClass=*)',
-# 			     # puvodni kod vystacil s pozadavkem na
-# 			     # aclRights, 389 to dela dost jinak, je
-# 			     # potreba mu pridat seznam atribitutu
-# 			     # ktery chceme zkoumat
-# 			     [@attrs,'aclRights'],0,
-# 			     [$ctrl],
-# 			     undef,
-# 			     undef,0,
-# 			     $res);
-#     return undef unless ($ret==LDAP_SUCCESS);
-
-#     ldap_control_free($ctrl); $ctrl = undef;
-
-#     my $aci = new myPerlLDAP::aci($self->ld, $res);
-#     $aci->owner($self);
-#     return $aci;
 #   } else {
-#     my %hash;
-#     $hash{'aclrights;entrylevel'} = ['add:0,delete:0,read:1,write:0,proxy:0'];
-#     foreach my $attr (@attrs) {
-#       $hash{"aclrights;attributelevel;$attr"} = ['search:1,read:1,compare:1,write:0,selfwrite_add:0,selfwrite_delete:0,proxy:0'];
-#     };
-
-#     my $aci = new myPerlLDAP::aci;
-#     $aci->initFromHash(\%hash);
-
-#     return $aci
-# #    die "myPerlLDAP::readACI: XXXXXXXXXXXXXXXXXXX";
+#     return undef;
 #   };
-};
+# };
 
-sub initACICTRL {
-  my $self = shift;
-  my @attrs = @_;
+# sub freeACICTRL {
+#   my $self = shift;
 
-  $self->freeACICTRL;
-
-  if ($self->aciCTRLSuported) {
-    my $ret = ldap_create_rights_control($self->ld,
-					 "",#as actualy loged user
-					 \@attrs,#list of attrs we are interested in
-					 1,#critical? YES!
-					 $self->{aciCTRL});
-    # error code is accesible via $self->ld
-    return undef unless ($ret==LDAP_SUCCESS);
-  } else {
-    return undef;
-  };
-};
-
-sub freeACICTRL {
-  my $self = shift;
-
-  # Release old ACICTRL if any was defined
-  if (defined($self->aciCTRL)) {
-    ldap_control_free($self->aciCTRL); $self->aciCTRL(undef);
-  };
-};
+#   # Release old ACICTRL if any was defined
+#   if (defined($self->aciCTRL)) {
+#     ldap_control_free($self->aciCTRL); $self->aciCTRL(undef);
+#   };
+# };
 
 #############################################################################
 # Mandatory TRUE return value.

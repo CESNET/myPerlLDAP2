@@ -4,7 +4,6 @@
 BEGIN { $| = 1; print "1..7\n";}
 #END {print "not ok 1\n" unless $SOK;}
 
-use lib qw(/home/honza/proj/myPerlLDAP);
 use strict;
 #use perlOpenLDAP::API qw(LDAP_PORT LDAPS_PORT LDAP_SCOPE_SUBTREE);
 use myPerlLDAP::conn;

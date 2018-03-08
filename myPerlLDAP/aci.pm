@@ -134,57 +134,46 @@ my $ds389_Sun1 = {
 		 };
 
 sub initFromHash389 {
-  my $self = shift;
-  my $hash = shift;
+    my $self = shift;
+    my $hash = shift;
 
-  $self->{_aci} = {};
-  $self->{_aci}->{entry} = {};
-  $self->{_aci}->{attributes} = {};
+    $self->{_aci} = {};
+    $self->{_aci}->{entry} = {};
+    $self->{_aci}->{attributes} = {};
 
-  # aclrights:none, objectClass:rsc, uid:rsc, userPassword:wo, cn:rsc, taildegree:rscwo, headdegree:rscwo
-  my $any_edit = 0;
-  foreach my $rights (@{$hash->{attributelevelrights}}) {
-    foreach my $one_a_rights (split(/ *, */, $rights)) {
-      my ($attribute, $rights) = split(/:/, $one_a_rights);
-      next if ($rights eq 'none');
-      foreach my $permision (split(//, $rights)) {
-	$self->_aci->{attributes}->{lc $attribute}->{$ds389_Sun1->{$permision}}=1;
-	$any_edit = 1 if ($permision =~ /w/i);
-      };
+    # aclrights:none, objectClass:rsc, uid:rsc, userPassword:wo, cn:rsc, taildegree:rscwo, headdegree:rscwo
+    my $any_edit = 0;
+    foreach my $rights (@{$hash->{attributelevelrights}}) {
+	foreach my $one_a_rights (split(/ *, */, $rights)) {
+	    my ($attribute, $rights) = split(/:/, $one_a_rights);
+	    next if ($rights eq 'none');
+	    foreach my $permision (split(//, $rights)) {
+		$self->_aci->{attributes}->{lc $attribute}->{$ds389_Sun1->{$permision}}=1;
+		$any_edit = 1 if ($permision =~ /w/i);
+	    };
+	};
     };
-  };
 
-  foreach my $rights (@{$hash->{entrylevelrights}}) {
-    next if ($rights eq 'none');
-    foreach my $permision (split(//, $rights)) {
-      $self->_aci->{entry}->{$ds389_Sun1->{$permision}}=1;
+    foreach my $rights (@{$hash->{entrylevelrights}}) {
+	next if ($rights eq 'none');
+	foreach my $permision (split(//, $rights)) {
+	    $self->_aci->{entry}->{$ds389_Sun1->{$permision}}=1;
+	};
     };
-  };
-  $self->_aci->{entry}->{write}=1 if ($any_edit);
+    $self->_aci->{entry}->{write}=1 if ($any_edit);
 };
 
 sub init {
   my $self = shift;
-  my $ld = shift;
-  my $res = shift;
+  my $entry = shift;
 
   my %hash;
-  my $entry = ldap_first_entry($ld,$res);
   if ($entry) {
-    my $ber;
-    my $attr = lc ldap_first_attribute($ld,$entry,$ber);
-    while ($attr) {
-      my @vals = ldap_get_values($ld, $entry, $attr);
+      $hash{attributelevelrights} = [$entry->get_value('attributeLevelRights')];
+      $hash{entrylevelrights} = [$entry->get_value('entryLevelRights')];
 
-      $hash{$attr} = \@vals;
-      $attr = lc ldap_next_attribute($ld, $entry, $ber);
-    };
+      $self->initFromHash389(\%hash);
   };
-
-  $self->initFromHash389(\%hash);
-
-  die "More than result to search with LDAP_SCOPE_BASE?! Imposible"
-    if (ldap_next_entry($ld,$res)>0);
 
   if ($self->debug >= 10) {
     carp("$self initiated");
