@@ -1,31 +1,10 @@
 #!/usr/bin/perl -w
-#$Id$
-
-# #############################################################################
-# myPerlLDAP - object oriented interface for work with LDAP
-# Copyright (C) 2001,02 by Jan Tomasek
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public
-# License as published by the Free Software Foundation; either
-# version 2 of the License, or (at your option) any later version.
-#
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Library General Public License for more details.
-#
-# You should have received a copy of the GNU Library General Public
-# License along with this library; if not, write to the Free
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-# #############################################################################
 
 BEGIN { $| = 1; print "1..6\n";}
 #END {print "not ok 1\n" unless $SOK;}
 
 use lib qw(/home/honza/proj/myPerlLDAP);
 use strict;
-use perlOpenLDAP::API qw(LDAP_PORT LDAPS_PORT LDAP_SCOPE_BASE);
 use myPerlLDAP::conn;
 use myPerlLDAP::entry;
 use myPerlLDAP::attribute;
@@ -40,7 +19,8 @@ $myPerlLDAP::attribute::_D=0;
 
 # - 2 -----------------------------------------------------------------------
 my $conn = new myPerlLDAP::conn({"host"   => $C::LDAPServerHost,
-				 "port"   => $C::LDAPServerPort,
+				 "port"   => $C::LDAPServerPortS,
+				 "certdb" => 1,
 				 "bind"   => $C::BindDN,
 				 "pswd"   => $C::BindPasswd}) or $SOK = 0;
 print "not ok 2\n" unless $SOK;
@@ -57,6 +37,7 @@ $entry->addValues('objectclass', ['top', 'person', 'inetOrgPerson', 'posixAccoun
 $entry->addValues('uid', 'test');
 $entry->addValues('sn', 'Testovic');
 $entry->addValues('cn', 'Test Testovic');
+$entry->addValues('cn', 'Test Testovič', 'lang-cs');
 $entry->addValues('givenName', 'Test');
 $entry->addValues('givenName', 'Test2');
 $entry->addValues('givenName', 'Test3');
@@ -66,13 +47,14 @@ $entry->addValues('mail', 'test@testing.universe');
 $entry->addValues('homedirectory', '/home/test111');
 $entry->addValues('uidnumber', '30001');
 $entry->addValues('gidnumber', '30001');
-$entry->addValues('userpassword', '{SSHA}kGoZtcaIHFPNXt0Rk+3c2InF7sCeqRhB');
+$entry->addValues('userpassword', 'heslo12345X');
 
 if ($entry->isModified) {
   print "ok 3\n";
 } else {
   print "not ok 3\n";
 };
+
 
 # - 4 -----------------------------------------------------------------------
 $conn->add($entry) or $SOK = 0;

@@ -33,6 +33,7 @@ use Net::LDAP::Constant qw(LDAP_SUCCESS LDAP_NO_SUCH_ATTRIBUTE
 use myPerlLDAP::abstract;
 use myPerlLDAP::attribute;
 use myPerlLDAP::utils qw(quote4XML quote4HTTP);
+use Hash::Merge qw(merge);
 
 use vars qw($AUTOLOAD @ISA %fields);
 
@@ -514,18 +515,20 @@ sub matchValues {
 
 sub makeAddRecord {
   my $self = shift;
-  my %rec;
+  my $rec = {}; # pokud neni definovano jako prazdna hash tak
+		# Hash::Merge nefunguje spravne
 
   my $attr;
   foreach $attr (@{$self->attrList}) {
-    if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
-      unless ($self->{virtual}->{lc $attr}) {
-	%rec = (%rec, %{$self->attr($attr)->makeModificationRecord('ab')});
-      };
-    }; # else: Attribute which have no value doesn't exists.
+      if (defined($self->attr($attr)) and ($self->attr($attr)->count)) {
+	  unless ($self->{virtual}->{lc $attr}) {
+	      my $attr = $self->attr($attr)->makeModificationRecord('add');
+	      $rec = merge($rec, $attr);
+	  };
+      }; # else: Attribute which have no value doesn't exists.
   };
-
-  return \%rec;
+  
+  return $rec;
 };
 
 sub clearModifiedFlags {

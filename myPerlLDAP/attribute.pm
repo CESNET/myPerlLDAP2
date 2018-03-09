@@ -485,8 +485,10 @@ sub makeModificationRecord {
     if ((scalar @{$values} == 1) and ($values->[0] eq '') and ($mode ne 'rb')) {
       return 0;
     } else {
-      $res->{$attr}->{$mode} = [] if (!defined($res->{$attr}->{$mode}));
-      push @{$res->{$attr}->{$mode}}, @{$values};
+      #$res->{$attr}->{$mode} = [] if (!defined($res->{$attr}->{$mode}));
+      #push @{$res->{$attr}->{$mode}}, @{$values};
+      $res->{$mode}->{$attr} = $values;
+      #push @{$res->{$mode}->{$attr}}, ;
       return 1;
     };
   };
@@ -495,13 +497,13 @@ sub makeModificationRecord {
   #   ab: add values to attribute
   #   db: delete values from attribute
   #   rb: replace all existing values of attribute with new one
-  if ($mode eq 'ab') {
+  if (($mode eq 'ab') or ($mode eq 'add')) {
     foreach my $type (@{$self->types}) {
       my $attr = $self->name;
       $attr = "$attr;$type" if ($type);
       # TODO: 18.05.2004 Access $self->{VALUES} rather directly this
       # is causing not necesary sorting when enabled
-      addValues2res(\%res, $attr, 'ab', $self->getValues($type));
+      addValues2res(\%res, $attr, $mode, $self->getValues($type));
     };
   } elsif (defined($self->{_cleared})) {
     #warn "$self->makeModificationRecord: Replace mode of _cleared";

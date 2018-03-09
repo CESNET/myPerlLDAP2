@@ -439,9 +439,6 @@ sub close {
 #############################################################################
 # Delete an object. An Entry ...
 #
-# With minor changes copied from perLDAP-1.4
-#
-# TODO: This will not work with clases based on myLDAP::entry or will??
 sub delete {
   my $self = shift;
   my $id = shift;
@@ -453,12 +450,12 @@ sub delete {
     $self->dn($dn) unless (defined($dn) && ($dn ne ""));
   };
 
-  $dn = normalizeDN($dn);
-  my $ret = ldap_delete_s($self->ld, $dn) if ($dn ne "");
+  my $mesg = $self->ldap->delete($dn);
+  $self->ldap_last($mesg);
+  
+  _syslog("DEL(".$mesg->code.")", $self->bindDN, $dn) if ($SYSLOG);
+  return 1 if ($mesg->code == LDAP_SUCCESS);
 
-  _syslog("DEL($ret)", $self->bindDN, $dn) if ($SYSLOG);
-
-  return (($ret == LDAP_SUCCESS) ? 1 : undef);
 }; # delete -----------------------------------------------------------------
 
 #############################################################################
@@ -474,11 +471,14 @@ sub add {
   return unless $entry;
 
   my $rec = $entry->makeAddRecord;
-  my $ret = ldap_add_s($self->ld, $entry->dn, $rec);
 
-  $self->_modRecord2syslog("ADD($ret)", $entry, secureModRecord($rec));
+  my $mesg = $self->ldap->add($entry->dn,
+			      attrs => [%{$rec->{add}}]);
+  $self->ldap_last($mesg);
 
-  if ($ret == LDAP_SUCCESS) {
+  $self->_modRecord2syslog("ADD(".$mesg->code.")", $entry, secureModRecord($rec));
+
+   if ($mesg->code == LDAP_SUCCESS) {
     $entry->clearModifiedFlags;
     return 1;
   } else {
