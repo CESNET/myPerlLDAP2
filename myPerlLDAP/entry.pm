@@ -161,7 +161,7 @@ sub removeAttr {
     if ($attr eq 'ARRAY') { @a = @$attr } else { @a = ($attr) };
     foreach my $a (@a) {
       $a = lc $a;
-      if ($self->attr($a)) {
+  if ($self->attr($a)) {
 	delete $self->attrData->{lc $a};
 	push @{$self->attrChanges}, (lc "-$a");
 	my @changes = grep(!/^$a$/, @{$self->attrOrder});
@@ -558,91 +558,91 @@ sub isModified {
 };
 
 sub makeModificationRecord {
-  my $self = shift;
+    my $self = shift;
 
-  my %rec;
-  my %delete;
-  my %replace;
-  my %add;
+    my %rec;
+    my %delete;
+    my %replace;
+    my %add;
 
-  my ($attr, $x);
-  foreach $x (@{$self->attrChanges}) {
+    my ($attr, $x);
 
-    if ($x =~ /^\-(.*)$/) { # delete
-      $attr = $1;
-      if ($self->attrInit->{$attr}) {
-	$delete{$attr}=1;
-	delete $add{$attr} if (exists($add{$attr}));
-	delete $replace{$attr} if (exists($replace{$attr}));
-      }; # else -> attribute isn't in LDAP database it was added and deleted
-         # someone who is using myPerlLDAP::entry, we can't pass this to
-         # server othervise all requests will fail
-    };
-
-    if ($x =~ /^\+(.+)$/) { # add
-      $attr = $1;
-
-      if ($self->attrInit->{$attr}) {
-	# we can't add attribute which is in LDAP database, we have to
-	# overwrite it. This can happen if user first deletes attribute
-	# and then add it again.
-	$replace{$attr}=1;
-	delete $add{$attr} if (exists($add{$attr}));
-	delete $delete{$attr} if (exists($delete{$attr}));
-      } else {
-	# this is pure add
-	$add{$attr}=1;
-	delete $replace{$attr} if (exists($replace{$attr}));
-	delete $delete{$attr} if (exists($delete{$attr}));
-      };
-    };
-  };
-
-  foreach $attr (keys %delete) {
-    die "This should never happen" if (defined($rec{$attr}));
-
-    unless ($self->{virtual}->{lc $attr}) {
-      $rec{$attr}->{rb}=[];
-    };
-  };
-
-  foreach $attr (keys %add, keys %replace) {
-    die "This should never happen" if (defined($rec{$attr}));
-
-    unless ($self->{virtual}->{lc $attr}) {
-      %rec = (%rec, %{$self->attr($attr)->makeModificationRecord('rb-force')});
-    };
-  };
-
-  foreach my $attrName (@{$self->attrList}) {
-    if (($self->attr($attrName)->getModifiedFlag()) and
-	(!defined($rec{$attrName}))) {
-      #warn "XXXXX: $attrName";
-      # TODO: This is nasty. I'm replacing whole attribute, but now
-      # I don't have much time ... to do better implementation I will
-      # need modify myPerlLDAP::attribute to be able produce modificaion
-      # record for this.
-      unless ($self->{virtual}->{lc $attrName}) {
-	%rec = (%rec, %{$self->attr($attrName)->makeModificationRecord('rb')});
-      };
-    };# else -> attribute was added as new and after that it was modified
-      # I not process it here because it is being added as new attr ...
-  };
-
-  # Prazny retezec neni hodnota, takze k certu s takovym atributem
-  foreach my $attrName (keys %rec) {
-    if (defined($rec{$attrName}->{rb})) {
-      my $vals = $rec{$attrName}->{rb};
-      if ((scalar @$vals == 1) and ($vals->[0] eq '')) {
-	unless ($self->{virtual}->{lc $attrName}) {
-	  $rec{$attrName}->{rb} = [];
+    foreach $x (@{$self->attrChanges}) {
+	if ($x =~ /^\-(.*)$/) { # delete
+	    $attr = $1;
+	    if ($self->attrInit->{$attr}) {
+		$delete{$attr}=1;
+		delete $add{$attr} if (exists($add{$attr}));
+		delete $replace{$attr} if (exists($replace{$attr}));
+	    }; # else -> attribute isn't in LDAP database it was added and deleted
+	    # someone who is using myPerlLDAP::entry, we can't pass this to
+	    # server othervise all requests will fail
 	};
-      };
-    };
-  };
 
-  #warn "Modification record: ".Dumper(\%rec);
-  return \%rec;
+	if ($x =~ /^\+(.+)$/) { # add
+	    $attr = $1;
+
+	    if ($self->attrInit->{$attr}) {
+		# we can't add attribute which is in LDAP database, we have to
+		# overwrite it. This can happen if user first deletes attribute
+		# and then add it again.
+		$replace{$attr}=1;
+		delete $add{$attr} if (exists($add{$attr}));
+		delete $delete{$attr} if (exists($delete{$attr}));
+	    } else {
+		# this is pure add
+		$add{$attr}=1;
+		delete $replace{$attr} if (exists($replace{$attr}));
+		delete $delete{$attr} if (exists($delete{$attr}));
+	    };
+	};
+    };
+
+    foreach $attr (keys %delete) {
+	die "This should never happen" if (defined($rec{$attr}));
+	next if ($self->{virtual}->{lc $attr});
+
+	$rec{delete}->{$attr} = [];
+    };
+
+    foreach my $attr (keys %add, keys %replace) {
+	die "This should never happen" if (defined($rec{$attr}));
+	
+	next if ($self->{virtual}->{lc $attr});
+    
+	%rec = %{merge(\%rec, $self->attr($attr)->makeModificationRecord('rb-force'))};
+    };
+
+    foreach my $attrName (@{$self->attrList}) {
+	if (($self->attr($attrName)->getModifiedFlag()) and
+	    (!defined($rec{$attrName}))) {
+	    #warn "XXXXX: $attrName";
+	    # TODO: This is nasty. I'm replacing whole attribute, but now
+	    # I don't have much time ... to do better implementation I will
+	    # need modify myPerlLDAP::attribute to be able produce modificaion
+	    # record for this.
+	    unless ($self->{virtual}->{lc $attrName}) {
+		#%rec = (%rec, %{$self->attr($attrName)->makeModificationRecord('rb')});
+		%rec = %{merge(\%rec, $self->attr($attrName)->makeModificationRecord('rb'))};
+	    };
+	};# else -> attribute was added as new and after that it was modified
+	# I not process it here because it is being added as new attr ...
+    };
+
+    # Prazny retezec neni hodnota, takze k certu s takovym atributem
+    foreach my $attrName (keys %rec) {
+	if (defined($rec{$attrName}->{rb})) {
+	    my $vals = $rec{$attrName}->{rb};
+	    if ((scalar @$vals == 1) and ($vals->[0] eq '')) {
+		unless ($self->{virtual}->{lc $attrName}) {
+		    $rec{delete}->{$attrName} = [];
+		};
+	    };
+	};
+    };
+
+    #warn "Modification record: ".Dumper(\%rec);
+    return \%rec;
 };
 
 sub xmlAttribute {

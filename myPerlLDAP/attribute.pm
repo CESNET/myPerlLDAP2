@@ -473,7 +473,7 @@ sub clearModifiedFlag {
 
 sub makeModificationRecord {
   my $self = shift;
-  my $mode = shift;
+  my $mode = shift || '';
   my %res;
 
   sub addValues2res {
@@ -482,22 +482,20 @@ sub makeModificationRecord {
     my $mode   = shift;
     my $values = shift;
 
-    if ((scalar @{$values} == 1) and ($values->[0] eq '') and ($mode ne 'rb')) {
-      return 0;
+    if ((scalar @{$values} == 1) and ($values->[0] eq '') and ($mode ne 'replace')) {
+	return 0;
     } else {
-      #$res->{$attr}->{$mode} = [] if (!defined($res->{$attr}->{$mode}));
-      #push @{$res->{$attr}->{$mode}}, @{$values};
-      $res->{$mode}->{$attr} = $values;
-      #push @{$res->{$mode}->{$attr}}, ;
-      return 1;
+	$res->{$mode}->{$attr} = [] if (!defined($res->{$mode}->{$attr}));
+	push @{$res->{$mode}->{$attr}}, @{$values};
+	return 1;
     };
   };
 
   # Posible modes
-  #   ab: add values to attribute
-  #   db: delete values from attribute
-  #   rb: replace all existing values of attribute with new one
-  if (($mode eq 'ab') or ($mode eq 'add')) {
+  #   ab/add: add values to attribute
+  #   db/detele: delete values from attribute
+  #   rb/replace: replace all existing values of attribute with new one
+  if ($mode eq 'add') {
     foreach my $type (@{$self->types}) {
       my $attr = $self->name;
       $attr = "$attr;$type" if ($type);
@@ -506,69 +504,53 @@ sub makeModificationRecord {
       addValues2res(\%res, $attr, $mode, $self->getValues($type));
     };
   } elsif (defined($self->{_cleared})) {
-    #warn "$self->makeModificationRecord: Replace mode of _cleared";
-    my $counter=0;
-    my $addedSomething = 0;
-    my %usedSubType = ();
-    foreach my $val (@{$self->{VALUES}}) {
-      my $attr = $self->name;
-      $usedSubType{$val->[1] || ''}++;
-      $attr = "$attr;$val->[1]" if ($val->[1]);
-      $addedSomething = 1 if addValues2res(\%res, $attr, 'rb', [$val->[0]]);
-      $counter++;
-    };
-
-    # 3. 5. 2007 - odstraneno protoze jsem funkci addValues2res
-    # umoznil v pripade ze je pozadavek na zmenu v rezimu 'rb'
-    # generovat zmenovy zaznam. Nize uvedeny kod nefunguval s subtypy.
-
-    #addValues2res(\%res, $self->name, 'rb', []) if (($counter == 0) or
-    #						    ($addedSomething == 0));
+      $res{delete}->{$self->name} = [];
   } elsif ($mode eq 'rb-force') {
     foreach my $type (@{$self->types}) {
       my $attr = $self->name;
       $attr = "$attr;$type" if ($type);
       # TODO: 18.05.2004 Access $self->{VALUES} rather directly this
       # is causing not necesary sorting when enabled
-      addValues2res(\%res, $attr, 'rb', $self->getValues($type));
+      addValues2res(\%res, $attr, 'replace', $self->getValues($type));
     };
   } else {
-    # Values to be deleted (_VALUES - VALUES)
-    foreach my $_val (@{$self->{_VALUES}}) {
-      my $m = 1;
-      foreach my $val (@{$self->{VALUES}}) {
-	my $_t = $_val->[1] || '';
-	my $t = $val->[1] || '';
-	$m = 0 if (($_val->[0] eq $val->[0]) and ($_t eq $t));
+      foreach my $_val (@{$self->{_VALUES}}) {
+	  my $m = 1;
+	  foreach my $val (@{$self->{VALUES}}) {
+	      my $_t = $_val->[1] || '';
+	      my $t = $val->[1] || '';
+	      $m = 0 if (($_val->[0] eq $val->[0]) and ($_t eq $t));
+	  };
+	  if ($m) {
+	      my $attr = $self->name;
+	      $attr = "$attr;$_val->[1]" if ($_val->[1]);
+	      #$res{$attr}->{db} = $_val->[0];
+	      #warn "DELETE: ".$_val->[0];
+	      addValues2res(\%res, $attr, 'delete', [$_val->[0]]);
+	  };
       };
-      if ($m) {
-        my $attr = $self->name;
-	$attr = "$attr;$_val->[1]" if ($_val->[1]);
-        #$res{$attr}->{db} = $_val->[0];
-	addValues2res(\%res, $attr, 'db', [$_val->[0]]);
+      # Values to be added (VALUES - _VALUES)
+      foreach my $_val (@{$self->{VALUES}}) {
+	  my $m = 1;
+	  foreach my $val (@{$self->{_VALUES}}) {
+	      my $_t = $_val->[1] || '';
+	      my $t = $val->[1] || '';
+	      $m = 0 if (($_val->[0] eq $val->[0]) and ($_t eq $t));
+	  };
+	  if ($m) {
+	      my $attr = $self->name;
+	      $attr = "$attr;$_val->[1]" if ($_val->[1]);
+	      #$res{$attr}->{ab} = $_val->[0];
+	      #warn "ADD: ".$_val->[0];
+	      addValues2res(\%res, $attr, 'add', [$_val->[0]]);
+	  };
       };
-    };
-    # Values to be added (VALUES - _VALUES)
-    foreach my $_val (@{$self->{VALUES}}) {
-      my $m = 1;
-      foreach my $val (@{$self->{_VALUES}}) {
-	my $_t = $_val->[1] || '';
-	my $t = $val->[1] || '';
-	$m = 0 if (($_val->[0] eq $val->[0]) and ($_t eq $t));
-      };
-      if ($m) {
-	my $attr = $self->name;
-	$attr = "$attr;$_val->[1]" if ($_val->[1]);
-	#$res{$attr}->{ab} = $_val->[0];
-	addValues2res(\%res, $attr, 'ab', [$_val->[0]]);
-      };
-    };
-    #warn Dumper("----------------------------------------------------------",
-#		"NAME",     $self->name,
-#		"MODIFIED", $self->modified,
-#		"CLEARED",  $self->{_cleared},
-#		"_VALUES",  $self->{_VALUES},
-#		"VALUES",   $self->{VALUES});
+      #warn Dumper("----------------------------------------------------------",
+      #		"NAME",     $self->name,
+      #		"MODIFIED", $self->modified,
+      #		"CLEARED",  $self->{_cleared},
+      #		"_VALUES",  $self->{_VALUES},
+      #		"VALUES",   $self->{VALUES});
   };
 
   return \%res;

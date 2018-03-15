@@ -573,6 +573,23 @@ sub update {
   my ($self, $entry) = @_;
 
   my $rec = $entry->makeModificationRecord;
+
+  my $mesg = $self->ldap->modify($entry->dn,
+				 %{$rec});
+  $self->ldap_last($mesg);
+
+  $self->_modRecord2syslog("MOD(".$mesg->code.")", $entry, secureModRecord($rec));
+
+  if ($mesg->code == LDAP_SUCCESS) {
+      $entry->clearModifiedFlags;
+      return 1;
+  };
+  return undef;
+
+
+  die Dumper($rec);
+
+  
   my $ret = ldap_modify_s($self->ld, $entry->dn, $rec);
 
   $self->_modRecord2syslog("MOD($ret)", $entry, secureModRecord($rec));
