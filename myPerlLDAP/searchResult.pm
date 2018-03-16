@@ -217,6 +217,14 @@ sub reset {
 sub count {
     my $self = shift;
 
+    # 16. 3. 2018 tohle je pekne stupidni, kdyz se zavola tahle metoda
+    # behem prvniho iterovani skrz pole tak to vrati picovinu. Hash
+    # sEntr vznikne po prvnim volani nextEntry.
+    if (defined($self->sEntr)) {
+	my $count = keys %{$self->sEntr};
+	return $count;
+    };
+
     return $self->{ldres}->count;
 };
 
