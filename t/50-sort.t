@@ -1,38 +1,21 @@
 #!/usr/bin/perl -w
-#$Id$
-
-# #############################################################################
-# myPerlLDAP - object oriented interface for work with LDAP
-# Copyright (C) 2001,02 by Jan Tomasek
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public
-# License as published by the Free Software Foundation; either
-# version 2 of the License, or (at your option) any later version.
-#
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Library General Public License for more details.
-#
-# You should have received a copy of the GNU Library General Public
-# License along with this library; if not, write to the Free
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-# #############################################################################
 
 BEGIN { $| = 1; print "1..4\n";}
 #END {print "not ok 1\n" unless $SOK;}
 
-use lib qw(/home/honza/proj/myPerlLDAP);
+use lib qw(../myPerlLDAP2);
 use strict;
-use perlOpenLDAP::API qw(LDAP_PORT LDAPS_PORT LDAP_SCOPE_SUBTREE);
 use myPerlLDAP::conn;
 use myPerlLDAP::entry;
 use myPerlLDAP::attribute;
+use myPerlLDAP::utils qw(:all);
 use t::C;
 use vars qw($SOK);
 $SOK = 1;
 print "ok 1\n" if $SOK;
+
+my $a=1;
+
 
 # Don't warm about missing attribute classes
 $myPerlLDAP::attribute::_D=0;
@@ -46,40 +29,50 @@ print "ok 2\n" if $SOK;
 
 # - 3 -----------------------------------------------------------------------
 $SOK = 1;
-my $res = $conn->search($C::TestBase, LDAP_SCOPE_SUBTREE,
+my $res = $conn->search($C::TestBase, LDAP_SCOPE_ONE,
 			$C::SearchFilter) or $SOK = 0;
 print "not ok 3\n" unless $SOK;
 print "ok 3\n" if $SOK;
 
 $res->cacheLocaly;
 
-$res->sort('sn', 'givenName');
-
 # - 4 -----------------------------------------------------------------------
 $SOK = 1;
 my $c1 = 0;
+my $cn1 = '';
 while (my $entry = $res->nextEntry) {
-  my $dump = join("\n", @{$entry->XML});
-#  warn $entry->getValues('cn')->[0];
-  $entry = $res->nextEntry;
-  $c1++;
+    my $dump = join("\n", @{$entry->XML});
+    my $a = $entry->getValues('cn')->[0].":".$entry->dn."!";
+    $cn1 .= $a;
+    #print ">>>>>> $a\n";
+    $c1++;
 };
 $SOK = 0 unless $c1;
 
 print "not ok 4\n" unless $SOK;
 print "ok 4\n" if $SOK;
 
+$res->sort('sn', 'givenName');
+
 # - 5 -----------------------------------------------------------------------
 $SOK = 1;
 $res->reset;
 my $c2 = 0;
+my $cn2 = '';
 while (my $entry = $res->nextEntry) {
-  my $dump = join("\n", @{$entry->XML});
-#  warn $entry->getValues('cn')->[0];
-  $entry = $res->nextEntry;
-  $c2++;
+    my $dump = join("\n", @{$entry->XML});
+    my $a = $entry->getValues('cn')->[0].":".$entry->dn."!";
+    $cn2 .= $a;
+    #print ">>>>>> $a\n";
+    
+    $c2++;
 };
 $SOK = 0 unless $c2==$c1;
 
 print "not ok 5\n" unless $SOK;
 print "ok 5\n" if $SOK;
+
+# - 6 -----------------------------------------------------------------------
+$SOK=$cn1 ne $cn2;
+print "not ok 6\n" unless $SOK;
+print "ok 6\n" if $SOK;

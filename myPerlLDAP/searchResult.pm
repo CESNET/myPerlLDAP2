@@ -8,10 +8,10 @@ package myPerlLDAP::searchResult;
 #			     ldap_ber_free ldap_count_entries);
 use myPerlLDAP::attribute;
 use myPerlLDAP::aci;
-use strict;
 use Data::Dumper;
 use Carp;
 
+use strict;
 use vars qw($_D @ISA %fields);
 
 @ISA = ("myPerlLDAP::abstract");
@@ -93,7 +93,7 @@ sub addValues2Entry {
 sub nextEntry {
     my $self = shift;
 
-    if (defined($self->sEntr) and defined($self->sEntr->{$self->sEntrI+1})) {
+    if (defined($self->sEntr) and defined($self->sEntr->{$self->sEntrI})) {
 	# entry uz jsme jednou prevzali od podrazeneho objektu, takze
 	# vracime nasi hodnotu z kese
 	my $entry = $self->sEntr->{$self->{sEntrI}++};
@@ -249,12 +249,8 @@ sub sort {
 
   $self->reset;
   my $entry = $self->nextEntry;
-#  warn $entry;
-#  warn "while";
   while ($entry) {
-#    warn "in while";
     my $key = $entry->dn;
-#    warn $key;
     my @sortKeyValues;
     foreach my $sortKey (@sortBy) {
       my $values = $entry->getValues($sortKey,'lang-en');
@@ -278,8 +274,7 @@ sub sort {
   };
 
   foreach my $entryNode (sort cmpEntryNode values %entries) {
-#    warn $entryNode->{entry}->dn;
-    $sortedEntries{$counter++} = $entryNode->{entry};
+      $sortedEntries{$counter++} = $entryNode->{entry};
   };
 
   $self->sEntr(\%sortedEntries);

@@ -52,6 +52,7 @@ use vars qw(@ISA %EXPORT_TAGS);
                            LDAP_PORT
                            LDAP_SCOPE_SUBTREE
                            LDAP_SCOPE_BASE
+                           LDAP_SCOPE_ONE
 			   )]
 		);
 # Add Everything in %EXPORT_TAGS to @EXPORT_OK
@@ -61,6 +62,7 @@ use constant LDAPS_PORT => 636;
 use constant LDAP_PORT  => 389;
 use constant LDAP_SCOPE_SUBTREE => 'sub';
 use constant LDAP_SCOPE_BASE => 'base';
+use constant LDAP_SCOPE_ONE => 'one';
 
 #############################################################################
 # Convert a "human" readable string to an LDAP scope value
