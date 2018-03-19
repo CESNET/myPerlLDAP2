@@ -1,2 +1,11 @@
 .idea
 t/C.pm
+blib
+Makefile
+Makefile.old
+pm_to_blib
+MYMETA.*
+debian/debhelper-build-stamp
+debian/files
+debian/libmyperlldap-perl.substvars
+debian/libmyperlldap-perl/
