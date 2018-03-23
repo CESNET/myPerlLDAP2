@@ -37,7 +37,7 @@ print "ok 3\n" if $SOK;
 # - 4 -----------------------------------------------------------------------
 $SOK = 1;
 my $entry = $res->nextEntry or $SOK = 0;
-$entry->attr('userPassword')->setValues('password') if $SOK;
+$entry->setValues('userPassword', 'password') if $SOK;
 print "not ok 4\n" unless $SOK;
 print "ok 4\n" if $SOK;
 

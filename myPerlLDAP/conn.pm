@@ -9,6 +9,7 @@ use Net::LDAPS;
 use Net::LDAP;
 use Net::LDAP::Constant qw(LDAP_SUCCESS);
 use Net::LDAP::Control;
+use Net::LDAP::Control::ProxyAuth;
 use myPerlLDAP::abstract;
 use myPerlLDAP::utils qw /:all/;
 use myPerlLDAP::entry;
@@ -26,23 +27,25 @@ $VERSION = "1.90";
 $SYSLOG = 0;
 
 %fields = (
-	   debug => 1,
-	   host => undef,
-	   port => undef,
-	   bindDN => undef,
-	   bindPasswd => undef,
-	   certDB => undef,
-	   ld => undef, #TODO SEMIK zlikvidovat
-	   ldRes => undef,
-	   dn => undef,
-	   aciCTRLSuported => undef,
-	   aciCTRL => undef,
- 	   retry => 0,
-           delay => 1,
-           ldap => undef,
-           ldap_last => undef,
+    debug => 1,
+    host => undef,
+    port => undef,
+    bindDN => undef,
+    bindPasswd => undef,
+    proxyDN => undef,
+    certDB => undef,
+    ld => undef, #TODO SEMIK zlikvidovat
+    ldRes => undef,
+    dn => undef,
+    aciCTRLSuported => undef,
+    aciCTRL => undef,
+    proxyCTRL => undef,
+    retry => 0,
+    delay => 1,
+    ldap => undef,
+    ldap_last => undef,
     
-	  );
+    );
 
 #############################################################################
 # Creator, create and initialize a new LDAP object ("connection"). We support
@@ -78,6 +81,7 @@ sub construct {
     $self->certDB($hash->{"certdb"}) if defined($hash->{"certdb"});
     $self->retry($hash->{"retry"}) if defined($hash->{"retry"});
     $self->delay($hash->{"delay"}) if defined($hash->{"delay"});
+    $self->proxyDN($hash->{"proxydn"}) if defined($hash->{"proxydn"});
   } else {
     my ($host, $port, $binddn, $bindpasswd, $certdb, $authmeth) = @_;
 
@@ -181,6 +185,11 @@ sub init {
   $self->{aciCTRLSuported} = undef;
   if (($ret->code == LDAP_SUCCESS) and ($self->{bindPasswd})) {
       $self->initACI;
+
+      if ($self->proxyDN) {
+	  my $auth = Net::LDAP::Control::ProxyAuth->new(authzID => 'dn: '.$self->proxyDN);
+	  $self->proxyCTRL($auth);
+      };
   };
 
   return (($ret->code == LDAP_SUCCESS) ? 1 : undef);
@@ -289,6 +298,9 @@ sub search {
       push @controls, $self->aciCTRL;
       push @attrs, 'aclRights'
   };      
+  if (defined($self->proxyCTRL)) {
+      push @controls, $self->proxyCTRL;
+  };
 
   my %search_params = ( base => $basedn,
 			scope => $scope,
@@ -322,10 +334,20 @@ sub read {
       @attrs = @{$attrs[0]} if (ref($attrs[0]) eq 'ARRAY');
   };
 
+  my @controls;
+  if (defined($self->aciCTRL)) {
+      push @controls, $self->aciCTRL;
+      push @attrs, 'aclRights'
+  };      
+  if (defined($self->proxyCTRL)) {
+      push @controls, $self->proxyCTRL;
+  };
+  
   my %search_params = ( base => $dn,
 			scope => LDAP_SCOPE_BASE,
 			filter => '(objectclass=*)');
   $search_params{attrs} = \@attrs if (@attrs);
+  $search_params{control} = \@controls if (@controls);
 
   my $mesg = $self->ldap->search(%search_params);
   $self->ldap_last($mesg);
@@ -472,8 +494,14 @@ sub add {
 
   my $rec = $entry->makeAddRecord;
 
+  my %params = (attrs => [%{$rec->{add}}]);
+
+  if (defined($self->proxyCTRL)) {
+      $params{control} =  [ $self->proxyCTRL ];
+  };
+ 
   my $mesg = $self->ldap->add($entry->dn,
-			      attrs => [%{$rec->{add}}]);
+			      %params);
   $self->ldap_last($mesg);
 
   $self->_modRecord2syslog("ADD(".$mesg->code.")", $entry, secureModRecord($rec));
@@ -556,6 +584,7 @@ sub _modRecord2syslog {
   my $rec = shift;
 
   foreach my $attr (sort keys %{$rec}) {
+      next if ($attr eq 'control');
     foreach my $mode (sort keys %{$rec->{$attr}}) {
       my $counter=0;
       foreach my $value (@{$rec->{$attr}->{$mode}}) {
@@ -573,6 +602,11 @@ sub update {
   my ($self, $entry) = @_;
 
   my $rec = $entry->makeModificationRecord;
+
+  my @controls;
+  if (defined($self->proxyCTRL)) {
+      $rec->{control} = [ $self->proxyCTRL ];
+  };
 
   my $mesg = $self->ldap->modify($entry->dn,
 				 %{$rec});
@@ -668,15 +702,24 @@ sub readACI {
   my @attrs = @_;
 
   if ($self->aciCTRLSuported) {
+      my $dn = $self->bindDN;
+      $dn = $self->proxyDN if ($self->proxyDN);
       my $ctrl = Net::LDAP::Control->new(critical=> 1,
 					 type => '1.3.6.1.4.1.42.2.27.9.5.2',
-					 value => 'dn: '.$self->bindDN,
+					 value => 'dn: '.$dn,
 	  );
 
+      my @controls;
+      push @controls, $ctrl;
+      if (defined($self->proxyCTRL)) {
+	  push @controls, $self->proxyCTRL;
+      };
+
+      
       my $mesg = $self->ldap->search(base => $dn,
 				     scope => 'base',
 				     filter => '(objectClass=*)',
-				     control => [ $ctrl ],
+				     control => \@controls,
 				     attrs => [ 'aclrights', @attrs ], # entry and attributes
 	  );
       $self->ldap_last($mesg);

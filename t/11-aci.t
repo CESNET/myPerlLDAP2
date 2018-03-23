@@ -1,26 +1,6 @@
 #!/usr/bin/perl -w
-#$Id$
 
-# #############################################################################
-# myPerlLDAP - object oriented interface for work with LDAP
-# Copyright (C) 2001,02 by Jan Tomasek
-#
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public
-# License as published by the Free Software Foundation; either
-# version 2 of the License, or (at your option) any later version.
-#
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Library General Public License for more details.
-#
-# You should have received a copy of the GNU Library General Public
-# License along with this library; if not, write to the Free
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-# #############################################################################
-
-BEGIN { $| = 1; print "1..15\n";}
+BEGIN { $| = 1; print "1..14\n";}
 #END {print "not ok 1\n" unless $SOK;}
 
 use strict;
@@ -68,7 +48,7 @@ print "ok 4\n" if $SOK;
 
 # - 5 -----------------------------------------------------------------------
 $SOK = 1;
-$SOK = 0 if $aci->e('write');
+$SOK = 0 if $aci->e('add');
 
 print "not ok 5\n" unless $SOK;
 print "ok 5\n" if $SOK;
@@ -86,7 +66,6 @@ $SOK = 0 if $aci->a('objectClass', 'write');
 
 print "not ok 7\n" unless $SOK;
 print "ok 7\n" if $SOK;
-
 
 # - 8 -----------------------------------------------------------------------
 #$SOK = 1;
