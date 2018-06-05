@@ -25,14 +25,15 @@ use lib qw(..);
 use strict;
 use myPerlLDAP::conn;
 use myPerlLDAP::attribute;
-use perlOpenLDAP::API qw(LDAP_PORT LDAP_SCOPE_BASE);
+use myPerlLDAP::utils qw(:all);
+#use perlOpenLDAP::API qw(LDAP_PORT LDAP_SCOPE_BASE);
 
 $myPerlLDAP::attribute::_D=0;
 
 my %tree; # This is global variable =?> Am I dirty programmer? :))
 
 my $LDAPServerHost = 'cml.cesnet.cz';
-my $LDAPServerPort = LDAP_PORT;
+my $LDAPServerPort = 389;
 my $attrClassesPath = "/tmp/myPerlLDAP-ac";
 my $autoClassesPath = "attribute";
 
@@ -58,9 +59,11 @@ my $superclasses = {
 		    '1.3.6.1.4.1.1466.115.121.1.4'   => '_audio',
 		    '1.3.6.1.4.1.1466.115.121.1.5'   => '_binary',
 		    '1.3.6.1.4.1.1466.115.121.1.6'   => '_binString',
+		    '1.3.6.1.4.1.1466.115.121.1.7'   => '_boolean',
 		    '1.3.6.1.4.1.1466.115.121.1.8'   => '_certificate',
 		    '1.3.6.1.4.1.1466.115.121.1.9'   => '_certificateList',
 		    '1.3.6.1.4.1.1466.115.121.1.10'  => '_certificatePair',
+		    '1.3.6.1.4.1.1466.115.121.1.11'  => '_countryString',
 		    '1.3.6.1.4.1.1466.115.121.1.12'  => '_DN',
 		    '1.3.6.1.4.1.1466.115.121.1.13'  => '_dataQualitySyntax',
 		    '1.3.6.1.4.1.1466.115.121.1.14'  => '_deliveryMethod',

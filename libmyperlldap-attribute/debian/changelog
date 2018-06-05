@@ -1,3 +1,9 @@
+libmyperlldap-attribute-perl (2.00-1) unstable; urgency=low
+
+  * update for myPerlLDAP v2
+
+ -- Jan Tomasek <jan@tomasek.cz>  Tue,  5 Jun 2018 10:45:00 +0200
+
 libmyperlldap-attribute-perl (1.80-1) unstable; urgency=low
 
   * Fixed perl dependency
