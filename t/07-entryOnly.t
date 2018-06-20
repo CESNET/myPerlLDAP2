@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-BEGIN { $| = 1; print "1..15\n";}
+BEGIN { $| = 1; print "1..16\n";}
 
 use strict;
 use vars qw($SOK);
@@ -8,7 +8,7 @@ use vars qw($SOK);
 use myPerlLDAP::abstract;
 use myPerlLDAP::attribute;
 use myPerlLDAP::entry;
-use myPerlLDAP::utils;
+use myPerlLDAP::utils qw(:all);
 use t::C;
 
 $myPerlLDAP::attribute::fields{debug}=0;
@@ -124,6 +124,12 @@ $SOK = 0;
 @{$entry->matchValues('business-Category', '^B')}==1 or $SOK=1;
 print "not ok 15\n" unless $SOK;
 print "ok 15\n" if $SOK;
+
+$SOK = 0;
+my $dn = "UiD=semik,  ou=people,DC=CESNET,dc=cz";
+$SOK = 1 if (normalizeDN($dn) eq "uid=semik,ou=people,dc=cesnet,dc=cz");
+print "not ok 16\n" unless $SOK;
+print "ok 16\n" if $SOK;
 
 #print $entry->XMLString;
 

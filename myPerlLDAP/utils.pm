@@ -36,6 +36,7 @@ package myPerlLDAP::utils;
 
 use strict;
 use Data::Dumper;
+use Net::LDAP::Util qw(ldap_explode_dn);
 use vars qw(@ISA %EXPORT_TAGS);
 
 #use perlOpenLDAP::API qw(LDAP_SCOPE_SUBTREE LDAP_SCOPE_BASE LDAP_SCOPE_ONELEVEL ldap_explode_dn);
@@ -97,13 +98,30 @@ sub str2Scope {
 #
 sub normalizeDN {
   my ($dn) = @_;
-  my (@vals);
 
   return "" unless (defined($dn) && ($dn ne ""));
-#TODO
-  @vals = ldap_explode_dn(lc $dn, 0);
 
-  return join(",", @vals);
+  my $explDN = ldap_explode_dn(lc $dn, casefold => 'lower');
+
+  # example of explDN: 
+  # $explDN = [
+  #         {
+  #           'uid' => 'semik'
+  #         },
+  #         {
+  #           'ou' => 'people'
+  #         },
+  #         {
+  #           'dc' => 'cesnet'
+  #         },
+  #         {
+  #           'dc' => 'cz'
+  #         }
+  #       ];
+
+  my $normalizedDN = join(",", map { (keys %{$_})[0] . '=' . (values %{$_})[0] } @{$explDN});
+
+  return $normalizedDN;
 };
 
 #############################################################################

@@ -6,7 +6,9 @@ package myPerlLDAP::searchResult;
 #			     ldap_get_dn ldap_first_attribute
 #			     ldap_next_attribute ldap_get_values_len
 #			     ldap_ber_free ldap_count_entries);
+
 use myPerlLDAP::attribute;
+use myPerlLDAP::entry;
 use myPerlLDAP::aci;
 use Data::Dumper;
 use Carp;
@@ -101,7 +103,7 @@ sub nextEntry {
     } elsif ($self->sEntrI < $self->{ldres}->count) {
 	my $nentry = $self->{ldres}->entry($self->sEntrI);
 
-	my $entry = new myPerlLDAP::entry;
+	my $entry = new myPerlLDAP::entry();
 	$entry->initFromNetLDAP($nentry);
 	$entry->owner($self->owner);
 
