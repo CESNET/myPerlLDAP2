@@ -1,3 +1,9 @@
+libmyperlldap-perl (2.02) unstable; urgency=low
+
+  * _fax -> _countryString
+
+ -- Jan Tomasek <jan@tomasek.cz>  Wed, 26 Aug 2018 08:49:00 +0200
+
 libmyperlldap-perl (2.01) unstable; urgency=low
 
   * fixed normalizeDN() which was using undefined function from perlOpenLDAP
