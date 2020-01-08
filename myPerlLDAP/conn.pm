@@ -261,20 +261,6 @@ sub errorMessage {
 } # getErrorString ----------------------------------------------------------
 
 #############################################################################
-# Print the last error code...
-#
-# Based on code from printError from perLDAP-1.4
-#
-sub printErrorMessage {
-  my ($self, $str) = @_;
-
-  return unless defined($self->ld);
-
-  $str = "LDAP error:" unless defined($str);
-  print "$str ", $self->errorMessage(), "\n";
-} # printError --------------------------------------------------------------
-
-#############################################################################
 # Normal LDAP search. 
 #
 sub search {
