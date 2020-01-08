@@ -597,7 +597,6 @@ sub update {
   my $mesg = $self->ldap->modify($entry->dn,
 				 %{$rec});
 
-  warn Dumper($mesg);
   $self->ldap_last($mesg);
 
   $self->_modRecord2syslog("MOD(".$mesg->{resultCode}.")", $entry, secureModRecord($rec));
