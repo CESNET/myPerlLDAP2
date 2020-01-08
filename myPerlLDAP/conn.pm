@@ -241,8 +241,8 @@ sub error {
   my ($self, $match, $msg) = @_;
   my ($ret);
 
-  return LDAP_SUCCESS unless defined($self->ld);
-  return ldap_get_lderrno($self->ld, $match, $msg);
+  return LDAP_SUCCESS unless defined($self->ldap_last);
+  return $self->ldap_last->{resultCode};
 }; # getErrorCode -----------------------------------------------------------
 
 #############################################################################
@@ -254,10 +254,10 @@ sub errorMessage {
   my ($self) = shift;
   my ($err);
 
-  return LDAP_SUCCESS unless defined($self->ld);
-  $err = ldap_get_lderrno($self->ld, undef, undef);
-
-  return ldap_err2string($err);
+  # Net::LDAP vraci v pripade OK stavu v promene errorMessage prazdny
+  # string.
+  return '' unless defined($self->ldap_last);
+  return $self->ldap_last->{errorMessage};
 } # getErrorString ----------------------------------------------------------
 
 #############################################################################
@@ -610,11 +610,13 @@ sub update {
 
   my $mesg = $self->ldap->modify($entry->dn,
 				 %{$rec});
+
+  warn Dumper($mesg);
   $self->ldap_last($mesg);
 
-  $self->_modRecord2syslog("MOD(".$mesg->code.")", $entry, secureModRecord($rec));
+  $self->_modRecord2syslog("MOD(".$mesg->{resultCode}.")", $entry, secureModRecord($rec));
 
-  if ($mesg->code == LDAP_SUCCESS) {
+  if ($mesg->{resultCode} == LDAP_SUCCESS) {
       $entry->clearModifiedFlags;
       return 1;
   };
