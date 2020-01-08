@@ -503,9 +503,10 @@ sub makeModificationRecord {
       # is causing not necesary sorting when enabled
       addValues2res(\%res, $attr, $mode, $self->getValues($type));
     };
-  } elsif (defined($self->{_cleared})) {
-      $res{delete}->{$self->name} = [];
-  } elsif ($mode eq 'rb-force') {
+#  } elsif (defined($self->{_cleared})) {
+#      #$res{delete}->{$self->name} = [];
+#      addValues2res(\%res, $attr, 'replace', $self->getValues($type));
+  } elsif (($mode eq 'rb-force') or (defined($self->{_cleared}))) {
     foreach my $type (@{$self->types}) {
       my $attr = $self->name;
       $attr = "$attr;$type" if ($type);
