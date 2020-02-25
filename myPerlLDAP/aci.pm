@@ -208,4 +208,10 @@ sub a {
   return $self->_aci->{attributes}->{$attribute}->{$mode};
 };
 
+sub dump {
+  my $self = shift;
+
+  return Dumper($self->_aci);
+};
+
 1;
