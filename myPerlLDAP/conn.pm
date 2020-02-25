@@ -170,8 +170,8 @@ sub init {
   $self->ldap($ldap);
   my $ret = $self->simpleAuth($self->bindDN, $self->bindPasswd);
 
-  # bez ohledu na vysledek zapomeneme heslo
-  $self->bindPasswd('');
+  #bez ohledu na vysledek zapomeneme heslo
+  $self->bindPasswd(undef);
 
   return $ret;
 } # init --------------------------------------------------------------------
@@ -657,8 +657,13 @@ sub simpleAuth {
   } while (($ret->code != LDAP_SUCCESS) and ($count < $self->retry));
   $self->ldap_last($ret);
 
+  if ($ret->code == LDAP_SUCCESS) {
+      $self->bindDN($dn);
+      $self->bindPasswd($pswd);
+  };
+
   $self->{aciCTRLSuported} = undef;
-  if (($ret->code == LDAP_SUCCESS) and ($self->{bindPasswd})) {
+  if (($ret->code == LDAP_SUCCESS) and ($pswd)) {
       $self->initACI;
 
       if ($self->proxyDN) {
@@ -699,17 +704,19 @@ sub simpleAuth {
 #############################################################################
 # Retrieve ACI info from server if posible
 #
+# docs https://access.redhat.com/documentation/en-us/red_hat_directory_server/9.0/html/administration_guide/viewing_the_acis_for_an_entry-get_effective_rights_control
 sub readACI {
   my $self = shift;
   my $dn = shift;
   my @attrs = @_;
 
+
   if ($self->aciCTRLSuported) {
-      my $dn = $self->bindDN;
-      $dn = $self->proxyDN if ($self->proxyDN);
+      my $bind_dn = $self->bindDN;
+      $bind_dn = $self->proxyDN if ($self->proxyDN);
       my $ctrl = Net::LDAP::Control->new(critical=> 1,
 					 type => '1.3.6.1.4.1.42.2.27.9.5.2',
-					 value => 'dn: '.$dn,
+					 value => 'dn: '.$bind_dn,
 	  );
 
       my @controls;
@@ -717,7 +724,6 @@ sub readACI {
       if (defined($self->proxyCTRL)) {
 	  push @controls, $self->proxyCTRL;
       };
-
       
       my $mesg = $self->ldap->search(base => $dn,
 				     scope => 'base',

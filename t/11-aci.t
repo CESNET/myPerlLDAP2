@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-BEGIN { $| = 1; print "1..14\n";}
+BEGIN { $| = 1; print "1..17\n";}
 #END {print "not ok 1\n" unless $SOK;}
 
 use strict;
@@ -117,6 +117,38 @@ $SOK = 0 if $entry->aci->a('objectClass', 'write');
 print "not ok 14\n" unless $SOK;
 print "ok 14\n" if $SOK;
 
+
+# - 15 ----------------------------------------------------------------------
+# pripojit se jako anonym
+$SOK = 1;
+$conn = new myPerlLDAP::conn({"host"   => $C::LDAPServerHost,
+			      "port"   => $C::LDAPServerPortS,
+			      "certdb" => 1,
+			      "bind"   => $C::BindDN,
+			      "pswd"   => $C::BindPasswd
+			     }) or $SOK = 0;
+print "not ok 15\n" unless $SOK;
+print "ok 15\n" if $SOK;
+
+# - 16 ----------------------------------------------------------------------
+# prepnout se na autentizovany bind
+$SOK = 1;
+$conn->simpleAuth($C::BindDN, $C::BindPasswd)
+  or $SOK = 0;
+print "not ok 16\n" unless $SOK;
+print "ok 16\n" if $SOK;
+
+# - 16 ----------------------------------------------------------------------
+$SOK = 1;
+$aci = $conn->readACI($C::TestBase,
+		      #atributy ktery nas zajimaji
+		      @C::attrs) or $SOK = 0;
+
+print "not ok 17\n" unless $SOK;
+print "ok 17\n" if $SOK;
+
+#warn $conn->errorMessage;
+#warn $aci->dump;
 
 
 #warn $entry->LDIFString;
