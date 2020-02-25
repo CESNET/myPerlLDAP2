@@ -157,42 +157,23 @@ sub abandon {
 # not be merged back to constructor I like this way ;-)
 sub init {
   my ($self) = shift;
-  my ($ret, $ldap);
 
-  
+  my $ldap;
+
   if (defined($self->certDB) && ($self->certDB ne "")) {
-      $ldap = Net::LDAPS->new($self->host, port => $self->port);
+    $ldap = Net::LDAPS->new($self->host, port => $self->port);
   } else {
-      $ldap = Net::LDAP->new($self->host, port => $self->port);
+    $ldap = Net::LDAP->new($self->host, port => $self->port);
   };
   return unless $ldap;
 
-  $self->abandon;
   $self->ldap($ldap);
-  my $count = 0;
-  do {
-    sleep($self->delay) if ($count++ > 0);
+  my $ret = $self->simpleAuth($self->bindDN, $self->bindPasswd);
 
-    if (($self->bindDN) and ($self->bindPasswd)) {
-	$ret = $ldap->bind($self->bindDN,
-			   password => $self->bindPasswd);
-    } else {
-	$ret = $ldap->bind;
-    };
-  } while (($ret->code != LDAP_SUCCESS) and ($count < $self->retry));
-  $self->ldap_last($ret);
+  # bez ohledu na vysledek zapomeneme heslo
+  $self->bindPasswd('');
 
-  $self->{aciCTRLSuported} = undef;
-  if (($ret->code == LDAP_SUCCESS) and ($self->{bindPasswd})) {
-      $self->initACI;
-
-      if ($self->proxyDN) {
-	  my $auth = Net::LDAP::Control::ProxyAuth->new(authzID => 'dn: '.$self->proxyDN);
-	  $self->proxyCTRL($auth);
-      };
-  };
-
-  return (($ret->code == LDAP_SUCCESS) ? 1 : undef);
+  return $ret;
 } # init --------------------------------------------------------------------
 
 sub initACI {
@@ -653,31 +634,66 @@ sub update {
 #   ldap_set_default_rebind_proc($self->ld, $dn, $pswd, $auth);
 # } # setDefaultRebindProc ----------------------------------------------------
 
-# SEMIK REMOVE: Nemyslim ze to nekde pouzivam
-# #############################################################################
-# # Do a simple authentication, so that we can rebind as another user.
-# #
-# # Without any change copied from perLDAP-1.4
-# #
-# sub simpleAuth {
-#   my ($self, $dn, $pswd) = @_;
-#   my ($ret);
+# TODO: Tahle fce je docel podobna fci init - kod je duplikovan chce
+# to init naucit pouzivat tuhle.
+#############################################################################
+# Do a simple authentication, so that we can rebind as another user.
+#
+sub simpleAuth {
+  my ($self, $dn, $pswd) = @_;
+  my ($ret);
 
-#   $ret = ldap_simple_bind_s($self->ld, $dn, $pswd);
+  $self->abandon;
 
-#   $self->bindDN($dn);
-#   $self->bindPasswd($pswd);
+  my $count = 0;
+  do {
+    sleep($self->delay) if ($count++ > 0);
 
-#   $self->{aciCTRLSuported} = undef;
-#   if (($ret == LDAP_SUCCESS) and (defined($pswd))) {
-#     return $self->initACI;
-#   } else {
-#     return (($ret == LDAP_SUCCESS) ? 1 : undef);
-#   };
+    if (($dn) and ($pswd)) {
+	$ret = $self->ldap->bind($dn, password => $pswd);
+    } else {
+	$ret = $self->ldap->bind;
+    };
+  } while (($ret->code != LDAP_SUCCESS) and ($count < $self->retry));
+  $self->ldap_last($ret);
 
-#   die "myPerlLDAP::conn: We can't reach this point";
-#   return (($ret == LDAP_SUCCESS) ? 1 : 0);
-# }; # simpleAuth -------------------------------------------------------------
+  $self->{aciCTRLSuported} = undef;
+  if (($ret->code == LDAP_SUCCESS) and ($self->{bindPasswd})) {
+      $self->initACI;
+
+      if ($self->proxyDN) {
+	  my $auth = Net::LDAP::Control::ProxyAuth->new(authzID => 'dn: '.$self->proxyDN);
+	  $self->proxyCTRL($auth);
+      };
+  };
+
+  return (($ret->code == LDAP_SUCCESS) ? 1 : undef);
+
+  # if (defined($self->certDB) && ($self->certDB ne "")) {
+  #     $ldap = Net::LDAPS->new($self->host, port => $self->port);
+  # } else {
+  #     $ldap = Net::LDAP->new($self->host, port => $self->port);
+  # };
+  # return unless $ldap;
+  
+  # $self->abandon;
+  # $ret = $ldap->bind($dn,
+  # 		     password => $pswd);
+  # $self->ldap($ldap);
+
+  # $self->bindDN($dn);
+  # $self->bindPasswd($pswd);
+
+  # $self->{aciCTRLSuported} = undef;
+  # if (($ret->code == LDAP_SUCCESS) and (defined($pswd))) {
+  #   return $self->initACI;
+  # } else {
+  #   return (($ret->code == LDAP_SUCCESS) ? 1 : undef);
+  # };
+
+  # die "myPerlLDAP::conn: We can't reach this point";
+  # return (($ret->code == LDAP_SUCCESS) ? 1 : 0);
+}; # simpleAuth -------------------------------------------------------------
 
 
 #############################################################################

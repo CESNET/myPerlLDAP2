@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 #$Id$
 
-BEGIN { $| = 1; print "1..7\n";}
+BEGIN { $| = 1; print "1..11\n";}
 #END {print "not ok 1\n" unless $SOK;}
 
 use strict;
@@ -66,3 +66,40 @@ $conn->init or $SOK = 0;
 print "not ok 7\n" unless $SOK;
 print "ok 7\n" if $SOK;
 
+# test prechodu z anonymiho na autentizovanyho binda
+# - 8 -----------------------------------------------------------------------
+# anonymni bind
+$SOK = 1;
+$conn = new myPerlLDAP::conn({"host"   => $C::LDAPServerHost,
+			      "port"   => $C::LDAPServerPortS,
+			      "certdb" => 1,
+			     })
+  or $SOK = 0;
+print "not ok 8\n" unless $SOK;
+print "ok 8\n" if $SOK;
+
+# - 9 -----------------------------------------------------------------------
+# nacist atribut co bychom nemeli anonymne cist
+$SOK = 1;
+my $entry = $conn->read($C::BindDN);
+my $pwd = $entry->getValues('radiusPassword')->[0]
+    or $SOK=0;
+print "ok 9\n" unless $SOK;
+print "not ok 9\n" if $SOK;
+
+# - 10 ----------------------------------------------------------------------
+# prepnout se na autentizovany bind
+$SOK = 1;
+$conn->simpleAuth($C::BindDN, $C::BindPasswd)
+  or $SOK = 0;
+print "not ok 10\n" unless $SOK;
+print "ok 10\n" if $SOK;
+
+# - 11 ----------------------------------------------------------------------
+# nacist atribut co se da precist jen autentizovane 
+$SOK = 1;
+$entry = $conn->read($C::BindDN);
+$pwd = $entry->getValues('radiusPassword')->[0] || undef;
+$SOK=0 if ($pwd ne 'test123');
+print "not ok 11\n" unless $SOK;
+print "ok 11\n" if $SOK;
