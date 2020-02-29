@@ -7,7 +7,7 @@ use strict;
 
 use Net::LDAPS;
 use Net::LDAP;
-use Net::LDAP::Constant qw(LDAP_SUCCESS);
+use Net::LDAP::Constant qw(LDAP_SUCCESS LDAP_COMPARE_TRUE);
 use Net::LDAP::Control;
 use Net::LDAP::Control::ProxyAuth;
 use myPerlLDAP::abstract;
@@ -396,12 +396,12 @@ sub browse {
 #
 sub compare {
     my ($self, $dn, $attr, $value) = @_;
-    return undef;
 
-    #TODO SEMIK
+    my $mesg = $self->ldap->compare($dn,
+				    attr => $attr,
+				    value => $value);
 
-#  return ldap_compare_s($self->ld, $dn, $attr, $value) ==
-#    LDAP_COMPARE_TRUE;
+    return ($mesg->{resultCode} == LDAP_COMPARE_TRUE);
 }; # compare ----------------------------------------------------------------
 
 #############################################################################
