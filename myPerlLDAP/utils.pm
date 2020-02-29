@@ -48,6 +48,7 @@ use vars qw(@ISA %EXPORT_TAGS);
 			   quote4XML
 			   quote4HTTP
 			   isBinary
+			   old_ldap_explode_dn
 
                            LDAPS_PORT
                            LDAP_PORT
@@ -158,6 +159,35 @@ sub isBinary {
 
   return undef;
 };
+
+# Implement old fassion ldap_explode_dn as was in perlOpenLDAP module
+#
+# $ perl ldap_dn_explode.pl
+# Vystup s parametrem 1: $VAR1 = 'Faculty of Law';
+# $VAR2 = 'Charles University in Prague';
+# $VAR3 = 'cesnet-ca';
+# $VAR4 = 'cz';
+# Vystup s parametrem 0: $VAR1 = 'ou=Faculty of Law';
+# $VAR2 = 'O=Charles University in Prague';
+# $VAR3 = 'dc=cesnet-ca';
+# $VAR4 = 'dc=cz';
+
+sub old_ldap_explode_dn {
+    my $dn = shift;
+    my $drop_attr_name = shift || 0;
+
+    my @out;
+    foreach my $element (@{ldap_explode_dn($dn, casefold => 'none')}) {
+	if ($drop_attr_name) {
+	    push @out, values %{$element};
+	} else {
+	    push @out, map { "$_=".$element->{$_} } keys %{$element};
+	};
+    };
+
+    return @out;
+};
+
 
 # Konec pohadky ;-)
 1;
