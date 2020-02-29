@@ -477,9 +477,9 @@ sub add {
 			      %params);
   $self->ldap_last($mesg);
 
-  $self->_modRecord2syslog("ADD(".$mesg->code.")", $entry, secureModRecord($rec));
+  $self->_modRecord2syslog("ADD(".$mesg->{resultCode}.")", $entry, secureModRecord($rec));
 
-   if ($mesg->code == LDAP_SUCCESS) {
+   if ($mesg->{resultCode} == LDAP_SUCCESS) {
     $entry->clearModifiedFlags;
     return 1;
   } else {
