@@ -238,7 +238,9 @@ sub errorMessage {
   # Net::LDAP vraci v pripade OK stavu v promene errorMessage prazdny
   # string.
   return '' unless defined($self->ldap_last);
-  return $self->ldap_last->{errorMessage};
+  return 'OK' if ($self->ldap_last->{resultCode} == LDAP_SUCCESS);
+  return $self->ldap_last->{errorMessage} if ($self->ldap_last->{errorMessage} ne '');
+  return 'LDAP error code = '.$self->ldap_last->{resultCode};
 } # getErrorString ----------------------------------------------------------
 
 #############################################################################
