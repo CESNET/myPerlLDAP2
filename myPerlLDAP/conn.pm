@@ -304,10 +304,14 @@ sub read {
   };
 
   my @controls;
-  if (defined($self->aciCTRL)) {
-      push @controls, $self->aciCTRL;
-      push @attrs, 'aclRights'
-  };      
+  # Cteni acl straslive zpomaluje caas. Originalni knihovna to
+  # nedelala, kdyz jsem to reimplementoval tak mi to prislo jako
+  # dobrej napad, ale vykonostni aspekt jsem neuvazil.
+  #
+  # if (defined($self->aciCTRL)) {
+  #     push @controls, $self->aciCTRL;
+  #     push @attrs, 'aclRights'
+  # };
   if (defined($self->proxyCTRL)) {
       push @controls, $self->proxyCTRL;
   };
