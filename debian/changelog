@@ -1,10 +1,12 @@
-libmyperlldap-perl (2.04) unstable; urgency=low
+libmyperlldap-perl (2.05) unstable; urgency=low
 
   * added method aci->dump
   * returned method conn->simpleAuth needed by myAppFramework
   * refactored methods conn->init and ->simpleAuth
+  * implemented old_ldap_explode_dn as was in perlOpenLDAP
+  * implemented conn->compare function
 
- -- Jan Tomasek <jan@tomasek.cz>  Thu, 25 Feb 2020 08:00:00 +0200
+ -- Jan Tomasek <jan@tomasek.cz>  Thu,  6 Mar 2020 12:38:00 +0200
 
 libmyperlldap-perl (2.03) unstable; urgency=low
 
