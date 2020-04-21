@@ -1,3 +1,11 @@
+libmyperlldap-perl (2.08-dev) unstable; urgency=low
+
+  * fixed function secureModRecord not updated after porting to Net::LDAP
+  * fix crasing when no permisions for reading entry
+  * permit '' as value but not for modificationRecords
+
+ -- Jan Tomasek <jan@tomasek.cz>  Sun, 14 Apr 2020 01:02:03 +0100
+
 libmyperlldap-perl (2.05) unstable; urgency=low
 
   * added method aci->dump

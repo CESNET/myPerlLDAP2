@@ -523,9 +523,13 @@ sub modifyRDN {
 sub secureModRecord {
   my $rec = shift;
 
-  $rec->{userpassword} = { x => ['values removed from debug for security reasons']} if (defined($rec->{userpassword}));
-  $rec->{tacuserpassword} = { x => ['values removed from debug for security reasons']} if (defined($rec->{tacuserpassword}));
-  $rec->{radiuspassword} = { x => ['values removed from debug for security reasons'] } if (defined($rec->{radiuspassword}));
+  foreach my $mod (keys %{$rec}) {
+    foreach my $attr ('userpassword',
+		      'tacuserpassword',
+		      'radiuspassword') {
+      $rec->{$mod}->{$attr} = [ 'values removed from debug for security reasons'] if (defined($rec->{$mod}->{$attr}));
+    };
+  };
 
   return $rec;
 };
@@ -599,21 +603,21 @@ sub update {
   return undef;
 
 
-  die Dumper($rec);
+  # die Dumper($rec);
 
   
-  my $ret = ldap_modify_s($self->ld, $entry->dn, $rec);
+  # my $ret = ldap_modify_s($self->ld, $entry->dn, $rec);
 
-  $self->_modRecord2syslog("MOD($ret)", $entry, secureModRecord($rec));
+  # $self->_modRecord2syslog("MOD($ret)", $entry, secureModRecord($rec));
 
-  if ($ret == LDAP_SUCCESS) {
-    $entry->clearModifiedFlags;
-    return 1;
-  } else {
-    print STDERR "Failed to update entry \"".$entry->dn."\" due \"".$self->errorMessage."\".\n";
-    print STDERR "Modification record: ".Dumper(secureModRecord($rec));
-    return undef;
-  };
+  # if ($ret == LDAP_SUCCESS) {
+  #   $entry->clearModifiedFlags;
+  #   return 1;
+  # } else {
+  #   print STDERR "Failed to update entry \"".$entry->dn."\" due \"".$self->errorMessage."\".\n";
+  #   print STDERR "Modification record: ".Dumper(secureModRecord($rec));
+  #   return undef;
+  # };
 }; # update -----------------------------------------------------------------
 
 # SEMIK REMOVE: Nemyslim ze to nekde pouzivam
