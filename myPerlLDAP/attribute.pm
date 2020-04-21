@@ -484,6 +484,10 @@ sub makeModificationRecord {
 
     if ((scalar @{$values} == 1) and ($values->[0] eq '') and ($mode ne 'replace')) {
 	return 0;
+    } elsif ((scalar @{$values} == 1) and ($values->[0] eq '') and ($mode eq 'replace')) {
+	# nejde nastavit attribut na prazdnou hodnotu - to je mazani
+	push @{$res->{'delete'}->{$attr}}, ();
+	return 1;
     } else {
 	$res->{$mode}->{$attr} = [] if (!defined($res->{$mode}->{$attr}));
 	push @{$res->{$mode}->{$attr}}, @{$values};

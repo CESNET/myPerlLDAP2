@@ -3,7 +3,7 @@
 BEGIN { $| = 1; print "1..6\n";}
 #END {print "not ok 1\n" unless $SOK;}
 
-use lib qw(/home/honza/proj/myPerlLDAP);
+use lib qw(../myPerlLDAP2);
 use strict;
 use myPerlLDAP::conn;
 use myPerlLDAP::entry;

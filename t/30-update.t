@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-BEGIN { $| = 1; print "1..17\n";}
+BEGIN { $| = 1; print "1..19\n";}
 
 use lib qw(../myPerlLDAP2);
 use strict;
@@ -74,7 +74,6 @@ if ($entry->isModified) {
 } else {
   print "ok 6\n";
 };
-
 
 # - 7 -----------------------------------------------------------------------
 $entry->addValues('description', 'Popiska');
@@ -174,7 +173,7 @@ print "ok 15\n" if $SOK;
 
 # - 16 ----------------------------------------------------------------------
 $SOK = 1;
-$entry->attr('loginShell')->setValues(undef);
+$entry->attr('loginShell')->setValues(undef); # TODO 2020.04.20 tohle nefunguje a test to nedetekuje!
 $entry->removeValues('givenName', 'Test-Q');
 $conn->update($entry) or $SOK = 0;
 print "not ok 16\n" unless $SOK;
@@ -182,6 +181,20 @@ print "ok 16\n" if $SOK;
 
 # - 17 ----------------------------------------------------------------------
 $SOK = 1;
-$conn->close or $SOK = 0;
+$entry->setValues('description', 'Nova Popiska');
+$conn->update($entry) or $SOK = 0;
 print "not ok 17\n" unless $SOK;
 print "ok 17\n" if $SOK;
+
+# - 18 ----------------------------------------------------------------------
+$SOK = 1;
+$entry->setValues('description', '');
+$conn->update($entry) or $SOK = 0;
+print "not ok 18\n" unless $SOK;
+print "ok 18\n" if $SOK;
+
+# - 19 ----------------------------------------------------------------------
+$SOK = 1;
+$conn->close or $SOK = 0;
+print "not ok 19\n" unless $SOK;
+print "ok 19\n" if $SOK;
