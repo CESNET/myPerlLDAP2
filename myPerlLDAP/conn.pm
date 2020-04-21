@@ -326,6 +326,10 @@ sub read {
   $self->ldap_last($mesg);
   if ($mesg->code == LDAP_SUCCESS) {
       my $nentry = $mesg->entry(0);
+      # v pripade ze se cte entry ke ktere nema pripojeny uzivatel
+      # prava, tak to sice vrati success ale zadny data a nasledne to
+      # kolabuje, takze rovnou vracime undef
+      return unless($nentry);
 
       my $entry = new myPerlLDAP::entry;
       $entry->initFromNetLDAP($nentry);
