@@ -121,17 +121,12 @@ sub new {
 #############################################################################
 # Destructor, makes sure we close any open LDAP connections.
 #
-# Without any changes copied from perLDAP-1.4
-#
 sub DESTROY {
   my ($self) = shift;
 
-  return unless defined($self->ld);
-
-  if (!defined($self->ld)) {
-    $self->close();
-    $self->ld(undef);
-  };
+  $self->close;
+  $self->abandon;
+  $self->ldap(undef);
 }; # DESTROY ----------------------------------------------------------------
 
 #############################################################################
@@ -427,6 +422,7 @@ sub close {
   if (defined($self->ldap)) {
       my $mesg = $self->ldap->unbind;
       $self->ldap_last($mesg);
+      $self->ldap->disconnect;
       return (($mesg->code == LDAP_SUCCESS) ? 1 : undef);
   };
   $self->ldap_last(undef);
