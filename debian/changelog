@@ -1,3 +1,9 @@
+libmyperlldap-perl (2.10) unstable; urgency=low
+
+  * fix crasing for krupka
+
+ -- Jan Tomasek <jan@tomasek.cz>  Wed, 24 Mar 2020 11:24:00 +0100
+
 libmyperlldap-perl (2.09-dev) unstable; urgency=low
 
   * fixed function secureModRecord not updated after porting to Net::LDAP

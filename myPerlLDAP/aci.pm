@@ -203,6 +203,7 @@ sub a {
   my $attribute = lc shift;
   my $mode = lc shift;
 
+  return undef if (!defined($self->_aci));
   return undef if (!defined($self->_aci->{attributes}->{$attribute}));
   return undef if (!defined($self->_aci->{attributes}->{$attribute}->{$mode}));
   return $self->_aci->{attributes}->{$attribute}->{$mode};
