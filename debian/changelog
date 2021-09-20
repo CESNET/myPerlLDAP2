@@ -1,3 +1,9 @@
+libmyperlldap-perl (2.11) unstable; urgency=low
+
+  * syslog facility 8 doesn't exists -> local1
+
+ -- Jan Tomasek <jan@tomasek.cz>  Mon, 20 Sep 2021 14:57:00 +0200
+
 libmyperlldap-perl (2.10) unstable; urgency=low
 
   * fix crasing for krupka

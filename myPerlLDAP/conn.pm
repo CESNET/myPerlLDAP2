@@ -549,7 +549,7 @@ sub _syslog {
     return $line;
   };
 
-  openlog('caas', 'cons,pid', 'local8');
+  openlog('myPerlLDAP', 'cons,pid', 'local1');
   syslog('info', join(":", map {escape($_)} @_));
   closelog();
 };
