@@ -9,3 +9,4 @@ debian/debhelper-build-stamp
 debian/files
 debian/libmyperlldap-perl.substvars
 debian/libmyperlldap-perl/
+debian/.debhelper/
