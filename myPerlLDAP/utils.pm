@@ -135,6 +135,10 @@ sub quote4XML {
   $bla =~ s/\^/&\#94;/g;
   $bla =~ s/\(/&\#40;/g;
   $bla =~ s/\)/&\#41;/g;
+  $bla =~ s/\"/&quot;/g;
+  $bla =~ s/\'/&apos;/g;
+  $bla =~ s/\</&lt;/g;
+  $bla =~ s/\>/&gt;/g;
 
   return $bla;
 };

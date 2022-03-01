@@ -1,3 +1,9 @@
+libmyperlldap-perl (2.12) unstable; urgency=low
+
+  * fix escaping for XML
+
+ -- Jan Tomasek <jan@tomasek.cz>  Tue, 22 Feb 2022 09:20:00 +0200
+
 libmyperlldap-perl (2.11) unstable; urgency=low
 
   * syslog facility 8 doesn't exists -> local1
